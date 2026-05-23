@@ -447,13 +447,13 @@ tr.zero td { background: rgba(126,226,168,.08); }
     </div>
 
     <div class="table-section">
-      <h2>Дополнительно: Multi-BC mode и почему его нет</h2>
+      <h2>Дополнительно: Multi-BC mode (Dynamic BC) — как работает в Lesnik</h2>
       <p style="color: var(--fg-dim); font-size: 13.5px; margin-bottom: 14px; line-height: 1.6;">
-        Это не баг, а отдельная тема — про то, как баллистический коэффициент пули меняется со скоростью, и как разные производители с этим работают. В прошивке Lesnik эта фича присутствует только в виде «заготовки», но не реализована. В нашем калькуляторе тоже пока не реализована — раскрой блок чтобы понять детали.
+        Multi-BC — это про то, как баллистический коэффициент пули меняется со скоростью. В прошивке Lesnik эта фича <b>реализована</b> через piecewise-linear dynamic BC factor для G1 и G7 drag-моделей. Тумблер «Динамический BC» в боковой панели включает её — формула один-в-один с прошивкой. Раскрой блок для подробностей.
       </p>
 
       <details style="margin-bottom: 10px; padding: 12px; background: rgba(40,60,90,0.18); border-left: 3px solid #5a8fd9; border-radius: 4px;">
-        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">📘 Multi-BC: что это, зачем нужно, и что в Lesnik</summary>
+        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">📘 Multi-BC: что это, как работает в Lesnik, и как использовать <span style="background:#2d6a2d; color:#cffccf; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">✅ РАБОТАЕТ</span></summary>
         <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
           <h3 style="margin-top: 8px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Что такое баллистический коэффициент (BC)</h3>
           <p>BC — это число, описывающее насколько хорошо пуля «пробивает воздух» по сравнению с эталонной пулей. Чем больше BC, тем медленнее пуля теряет скорость и меньше падает на дистанции. Формула: <code>BC = масса / (диаметр² × form_factor)</code>, где form factor — это отношение реального drag-профиля к эталонному.</p>
@@ -476,33 +476,43 @@ tr.zero td { background: rgba(126,226,168,.08); }
 
           <p><b>3. Hornady 4DOF / Custom Drag Model.</b> Самый точный подход. Hornady замеряет drag-кривую каждой пули <b>напрямую через doppler-радар</b> на реальных стрельбах — без эталонной пули вообще. В их 4DOF приложении нет понятия «BC» — есть полный профиль <code>Cd(M)</code> (drag coefficient как функция числа Маха) для каждой пули. Минус — работает только для пуль которые они замерили.</p>
 
-          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Что в прошивке Lesnik</h3>
-          <p>Lesnik поддерживает все 6 стандартных drag-моделей (G1, G2, G5, G6, G7, G8) — таблицы зашиты в <code>data/coefficient_table.bin</code>. То есть Litz-подход (G7 + single BC) работает «из коробки» и это лучшее что есть в текущей прошивке.</p>
-          <p>А вот <b>multi-BC</b> в прошивке найден только в виде <b>заготовки</b>. Есть команда <code>OnCmdSetMultiBcSwitch</code> (RPC command ID 0x27b5, расположена в <code>libGuiLesnik2_pro.so</code>) — но это <b>dead code stub</b>. Реверсинг показал:</p>
+          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Что в прошивке Lesnik — реальная реализация</h3>
+          <p>Lesnik поддерживает все 6 стандартных drag-моделей (G1, G2, G5, G6, G7, G8) — таблицы зашиты в <code>data/coefficient_table.bin</code>. Litz-подход (G7 + single BC) работает «из коробки».</p>
+          <p>Дополнительно прошивка реализует <b>4-й подход — piecewise-linear dynamic BC factor</b>. Это не Sierra-style таблица из 3-4 BC значений и не Hornady CDM, а <b>математическая функция</b>, которая на каждом шаге интегрирования корректирует эффективный BC в зависимости от текущей скорости пули.</p>
+          <p>Архитектура реализации (для глубоко интересующихся):</p>
+          <ol style="padding-left: 20px; margin: 6px 0;">
+            <li>Пользователь включает тумблер в меню «Trajectory» (или через мобильное приложение через RPC команду <code>OnCmdSetMultiBcSwitch</code>)</li>
+            <li>Значение сохраняется в системе настроек <code>GuiParam[enum_id=0x27b5]</code></li>
+            <li>На каждом обновлении баллистики прошивка читает это значение и вызывает setter <code>zs_trajectory_dynamic_BC_set</code></li>
+            <li>Setter ставит глобальный флаг <code>g_use_dynamic_BC</code> в значение 0 или 1</li>
+            <li>В основном цикле баллистики <code>ZS_TrajectoryCalculate</code> при включённом флаге вызывается рабочая функция <code>ZS_TrajectoryBallisticCoefficientDynamicFactor</code> — она возвращает поправочный коэффициент по числу Маха</li>
+          </ol>
+          <p>Формула функции — <b>piecewise-linear</b> (кусочно-линейная) с разными константами для G1 и G7. Например для G7 (типичный современный match-сценарий):</p>
           <ul style="padding-left: 20px; margin: 6px 0;">
-            <li>Функция читает payload в локальную стековую переменную, возвращает 1, <b>ничего не сохраняет</b></li>
-            <li>Нет ни одного связанного символа (<code>OnCmdGetMultiBc</code>, <code>MultiBcValue</code> и т.д.)</li>
-            <li>Нет UI в меню прибора</li>
-            <li>Нет интеграции в <code>ZS_TrajectoryCalculate</code> — никаких ветвлений которые бы переключали BC</li>
+            <li>На гиперзвуке (Mach > 2.5) — factor = 1.0 (нет коррекции, выше типичных скоростей пуль)</li>
+            <li>На сверхзвуке (1.8–2.5) — factor линейно падает с 1.0 до 0.965 (малая коррекция ~3.5%)</li>
+            <li>Trans-sonic (1.2–1.8) — factor падает с 0.965 до 0.905 (~6%)</li>
+            <li>Около звука (1.0–1.2) — factor падает с 0.905 до 0.87 (резкая зона ~4% на узком диапазоне)</li>
+            <li>Дозвук (Mach < 1.0) — factor ≈ 0.87 (стабильная коррекция)</li>
           </ul>
-          <p>Это <b>двойное независимое подтверждение</b> (Claude reverse + Gemini blind reverse). OEM начинал делать поддержку multi-BC, но бросил на полпути.</p>
+          <p>Эффект: при включённой опции эффективный BC <b>растёт</b> по мере замедления пули (BC_effective = BC_user / factor). Это компенсирует увеличение drag при переходе через скорость звука и даёт более точные предсказания на дальних дистанциях.</p>
+          <p><b>Важное ограничение прошивки:</b> dynamic BC работает <b>только</b> для G1 и G7. Для других drag-моделей (G2, G5, G6, G8) прошивка автоматически отключает фичу. Это правильное решение — для G2/G5/G6/G8 нет калиброванных констант, factor возвращал бы 1.0 (то есть отключённую коррекцию).</p>
 
           <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Что в этом калькуляторе</h3>
-          <p>Сейчас здесь — <b>single BC</b>, как и в прошивке. Поле «BC» одно, применяется на всю траекторию. Чтобы добавить multi-BC mode потребуется:</p>
-          <ol style="padding-left: 20px; margin: 6px 0;">
-            <li>В UI: переключатель «Single BC / Multi-BC» и таблица с парами <code>[velocity_threshold, BC]</code></li>
-            <li>В коде интегратора: на каждом шаге проверять текущую скорость пули и выбирать соответствующий BC</li>
-            <li>Импорт Sierra/JBM таблиц для популярных пуль</li>
-          </ol>
-          <p>Это <b>новая фича</b> которой нет в прошивке. Полезна для:</p>
+          <p>Этот калькулятор <b>уже воспроизводит</b> формулу прошивки байт-в-байт со всеми константами. Включи чекбокс <b>«Динамический BC»</b> в боковой панели (под секцией «Атмосфера»), и расчёт начнёт применять piecewise-linear коррекцию. Работает для G1 и G7; для G2/G5/G6/G8 чекбокс никак не влияет (как и в прошивке).</p>
+
+          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Сравнение с industry-подходами</h3>
+          <p>Реализация Lesnik — <b>уникальный гибрид</b>: использует G1/G7 как base drag models (как Sierra/Litz), но применяет <b>piecewise-linear correction</b> к BC, а не табличное переключение между несколькими BC значениями. Это легче в реализации (нет таблиц BC на каждую пулю) и работает достаточно точно для практических задач.</p>
+          <p>Если хочешь сравнить с другими подходами:</p>
           <ul style="padding-left: 20px; margin: 6px 0;">
-            <li>Использования Sierra/JBM каталогов напрямую (без приведения к G7)</li>
-            <li>Сравнения предсказаний с продвинутыми калькуляторами (JBM, Strelok+, Hornady 4DOF)</li>
-            <li>Прототипирования «как должна выглядеть» multi-BC поддержка в новой прошивке</li>
+            <li><b>Sierra multi-BC table</b> — 3-4 BC значения на пулю по velocity bands. Точнее на дальних, но требует данных от производителя</li>
+            <li><b>Litz G7 + single BC</b> — простейший подход, достаточно точный для современных match-пуль</li>
+            <li><b>Hornady CDM (4DOF)</b> — полная drag curve через doppler-радар. Самый точный, но только для пуль которые Hornady замерили</li>
+            <li><b>Lesnik piecewise-linear (этот калькулятор)</b> — компромисс между точностью и простотой</li>
           </ul>
 
-          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Что делать стрелку прямо сейчас</h3>
-          <p>Самый практичный совет: используй <b>G7 drag model</b> вместо G1 для современных match-пуль (.308 SMK, .338 Lapua, 6.5 Creedmoor ELD-M и т.д.). G7 BC обычно публикуется производителем и работает существенно лучше чем G1 BC на дальних дистанциях без необходимости в multi-BC. На дистанциях до 1500 метров разница между «G7 single» и «G1 multi-BC» обычно меньше 1 mil — для практических задач достаточно.</p>
+          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Практический совет</h3>
+          <p>Для современных match-пуль (.308 SMK, .338 Lapua, 6.5 Creedmoor ELD-M и т.д.) — рекомендую: выбрать <b>G7 drag model</b> + ввести G7 BC от производителя + <b>включить «Динамический BC»</b>. Это даст лучшую точность на дальних дистанциях. На 1000 м для типичных снайперских комбинаций разница между «без dynamic» и «с dynamic» составляет 15-25 см drop'a — заметная для стрельбы по точечным целям.</p>
         </div>
       </details>
     </div>
