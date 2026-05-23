@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>RikaNV Lesnik · Баллистический калькулятор</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --fg: #e8e8e8;
+      --fg-dim: #999;
+      --accent-red: #d9605f;
+      --accent-green: #5fa86f;
+      --card-bg: #232323;
+      --border: #333;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .subtitle {
+      color: var(--fg-dim);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 32px 0;
+    }
+    @media (max-width: 600px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      text-decoration: none;
+      color: var(--fg);
+      transition: transform 0.15s, border-color 0.15s;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    .card.firmware { border-left: 4px solid var(--accent-red); }
+    .card.corrected { border-left: 4px solid var(--accent-green); }
+    .card.firmware:hover { border-color: var(--accent-red); }
+    .card.corrected:hover { border-color: var(--accent-green); }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .card-sub {
+      color: var(--fg-dim);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .card-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      flex-grow: 1;
+    }
+    .card-link {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--accent-green);
+    }
+    .card.firmware .card-link { color: var(--accent-red); }
+    .section {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .section h2 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+    }
+    .section p {
+      font-size: 14.5px;
+      color: var(--fg-dim);
+      margin: 0 0 12px 0;
+    }
+    .section p:last-child { margin-bottom: 0; }
+    code {
+      background: #2a2a2a;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 13px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--fg-dim);
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Баллистический калькулятор RikaNV Lesnik 660L PRO</h1>
+    <p class="subtitle">Реверс-инжиниринг + порт алгоритма из оригинальной OEM-прошивки</p>
+
+    <div class="cards">
+      <a class="card firmware" href="calculator.html">
+        <div class="card-title">🔴 Mirror прошивки</div>
+        <div class="card-sub">воспроизводит OEM-код со всеми его багами</div>
+        <div class="card-desc">
+          Байт-в-байт порт <code>ZS_TrajectoryCalculate</code> из <code>libGuiLesnik2_pro.so</code> вместе с найденными ошибками: заниженная деривация, стабильность пули под чужой калибр, лишний шаг интегрирования. Используется для сверки расчётов с физическим прибором.
+        </div>
+        <div class="card-link">Открыть mirror →</div>
+      </a>
+
+      <a class="card corrected" href="calculator-corrected.html">
+        <div class="card-title">✅ С исправлениями</div>
+        <div class="card-sub">физически корректная баллистика</div>
+        <div class="card-desc">
+          Та же модель, но с исправлениями четырёх найденных багов прошивки. Добавлены поля длины и диаметра пули (которых нет в OEM-UI). Внутри страницы — подробное описание каждого исправления простым языком.
+        </div>
+        <div class="card-link">Открыть corrected →</div>
+      </a>
+    </div>
+
+    <div class="section">
+      <h2>Что это</h2>
+      <p>
+        Lesnik 660L PRO — тепловизионный прицел компании RikaNV на OEM-платформе SunCreative (китайский Rockchip RK3576). В его прошивке мы нашли несколько физических ошибок в баллистическом алгоритме, которые систематически смещают точку попадания на дальних дистанциях.
+      </p>
+      <p>
+        Эти два калькулятора — JavaScript-порт алгоритма прошивки. Один воспроизводит OEM-код «как есть» (для проверки наших находок на реальном приборе), второй — с исправлениями (для понимания «как должно быть»).
+      </p>
+      <p>
+        Полное исследование (декомпиль, asm-разбор, cross-audit отчёты) находится в приватном репозитории и не публикуется по соображениям responsible disclosure.
+      </p>
+    </div>
+
+    <div class="footer">
+      <a href="https://github.com/shah1git/rika-calculator" style="color: var(--fg-dim);">github.com/shah1git/rika-calculator</a>
+    </div>
+  </div>
+</body>
+</html>
