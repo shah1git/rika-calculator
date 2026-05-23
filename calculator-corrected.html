@@ -513,6 +513,65 @@ tr.zero td { background: rgba(126,226,168,.08); }
 
           <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Практический совет</h3>
           <p>Для современных match-пуль (.308 SMK, .338 Lapua, 6.5 Creedmoor ELD-M и т.д.) — рекомендую: выбрать <b>G7 drag model</b> + ввести G7 BC от производителя + <b>включить «Динамический BC»</b>. Это даст лучшую точность на дальних дистанциях. На 1000 м для типичных снайперских комбинаций разница между «без dynamic» и «с dynamic» составляет 15-25 см drop'a — заметная для стрельбы по точечным целям.</p>
+
+          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Как именно считается баллистика при включенном Multi-BC (пошагово)</h3>
+          <p>Прошивка использует <b>метод явного Эйлера с шагом по дистанции 0,5 метра</b>. Это значит траектория считается не «за один раз», а как последовательность маленьких шажков. Для цели на 800 метров — это <b>1600 шагов</b>, на каждом всё пересчитывается заново.</p>
+
+          <p><b>Что происходит на каждом шаге:</b></p>
+          <ol style="padding-left: 20px; margin: 8px 0;">
+            <li>Считается текущая скорость пули в трёх осях (vx, vy, vz)</li>
+            <li>По текущей высоте — атмосферные параметры (плотность ρ, скорость звука c)</li>
+            <li>Число Маха: <code>M = v_current / c</code></li>
+            <li>Коэффициент сопротивления Cd — интерполяция по drag-таблице (G1 или G7) по M</li>
+            <li><b style="color:#b8d4f0;">Если включен Multi-BC:</b> вычисляется поправочный <code>factor</code> по piecewise-формуле (значения выше), и эффективный k_const умножается на factor (BC становится «эффективным»)</li>
+            <li>Drag-ускорение: <code>a_drag = (ρ/ρ_std) × k_const_eff × Cd × v_rel</code></li>
+            <li>Гравитационное ускорение: <code>−9,80665 м/с²</code> по y</li>
+            <li>Кориолис (если включён): <code>−2·(ω × v)</code></li>
+            <li>Time-step: <code>dt = 0,5м / vx</code></li>
+            <li>Обновляем скорость: <code>v_new = v − dt·(a_drag + a_grav + a_cor)</code></li>
+            <li>Обновляем позицию: <code>pos_new = pos + dt·v</code></li>
+            <li>Накапливаем TOF: <code>TOF += dt</code></li>
+          </ol>
+
+          <p><b>Конкретный пример для .308 168 grain SMK на 800 м</b> (G7 BC=0,218, MV=817 м/с, стандартная атмосфера):</p>
+
+          <table style="width:100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0;">
+            <thead>
+              <tr style="background:#2a2a2a;">
+                <th style="padding:6px; border:1px solid #444;">Дистанция</th>
+                <th style="padding:6px; border:1px solid #444;">v_текущая (м/с)</th>
+                <th style="padding:6px; border:1px solid #444;">Mach</th>
+                <th style="padding:6px; border:1px solid #444;">factor (G7)</th>
+                <th style="padding:6px; border:1px solid #444;">Drop без MultiBC</th>
+                <th style="padding:6px; border:1px solid #444;">Drop с MultiBC</th>
+                <th style="padding:6px; border:1px solid #444;">Разница</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:5px; border:1px solid #333;">100 м</td><td style="padding:5px; border:1px solid #333;">758</td><td style="padding:5px; border:1px solid #333;">2,22</td><td style="padding:5px; border:1px solid #333;">0,986</td><td style="padding:5px; border:1px solid #333;">−10 см</td><td style="padding:5px; border:1px solid #333;">−10 см</td><td style="padding:5px; border:1px solid #333;">~0</td></tr>
+              <tr><td style="padding:5px; border:1px solid #333;">300 м</td><td style="padding:5px; border:1px solid #333;">670</td><td style="padding:5px; border:1px solid #333;">1,97</td><td style="padding:5px; border:1px solid #333;">0,973</td><td style="padding:5px; border:1px solid #333;">−84 см</td><td style="padding:5px; border:1px solid #333;">−83 см</td><td style="padding:5px; border:1px solid #333;">+1 см</td></tr>
+              <tr><td style="padding:5px; border:1px solid #333;">500 м</td><td style="padding:5px; border:1px solid #333;">593</td><td style="padding:5px; border:1px solid #333;">1,75</td><td style="padding:5px; border:1px solid #333;">0,960</td><td style="padding:5px; border:1px solid #333;">−255 см</td><td style="padding:5px; border:1px solid #333;">−250 см</td><td style="padding:5px; border:1px solid #333;">+5 см</td></tr>
+              <tr><td style="padding:5px; border:1px solid #333;">700 м</td><td style="padding:5px; border:1px solid #333;">524</td><td style="padding:5px; border:1px solid #333;">1,55</td><td style="padding:5px; border:1px solid #333;">0,940</td><td style="padding:5px; border:1px solid #333;">−551 см</td><td style="padding:5px; border:1px solid #333;">−535 см</td><td style="padding:5px; border:1px solid #333;">+16 см</td></tr>
+              <tr><td style="padding:5px; border:1px solid #333;">800 м</td><td style="padding:5px; border:1px solid #333;">492</td><td style="padding:5px; border:1px solid #333;">1,46</td><td style="padding:5px; border:1px solid #333;">0,931</td><td style="padding:5px; border:1px solid #333;">−748 см</td><td style="padding:5px; border:1px solid #333;">−722 см</td><td style="padding:5px; border:1px solid #333;">+26 см</td></tr>
+            </tbody>
+          </table>
+
+          <p>Заметь динамику: на 100 м <code>factor=0,986</code> (коррекция ~1,4%), на 800 м уже <code>0,931</code> (коррекция ~7%). По мере замедления пули и приближения к скорости звука коррекция растёт.</p>
+
+          <p><b>Где «работает» коррекция в зависимости от Mach:</b></p>
+          <ul style="padding-left: 20px; margin: 6px 0;">
+            <li>На сверхзвуке (M &gt; 2,5) — factor = 1,0, коррекции нет (пуля летит выше типичной зоны)</li>
+            <li>От M = 2,5 до 1,0 — factor плавно падает с 1,0 до ~0,87</li>
+            <li>«Горячая зона» — между M=1,0 и M=1,2 (около звука): factor падает резко с 0,905 до 0,87. Для .308 это типично дистанции 900-1100 м</li>
+            <li>На дозвуке (M &lt; 1,0) — factor стабилен ~0,87</li>
+          </ul>
+
+          <p><b>Bottom line:</b> Multi-BC реально полезен на дистанциях <b>больше 500 м</b>. На короткой — почти не влияет. На 1000+ м даёт типично 40-50 см drop-коррекции для .308 класса.</p>
+
+          <h3 style="margin-top: 16px; margin-bottom: 8px; font-size: 15px; color: #b8d4f0;">Архитектурное ограничение прошивки: Multi-BC ⊕ BDC</h3>
+          <p>В прошивке Lesnik <b>нельзя одновременно</b> включить Multi-BC и Multi-Zero (BDC, target cards D2-D5). Это найдено через UI-asset <code>tipmulti.png</code> с текстом «<i>МУЛЬТИ БК И КАРТУ ЦЕЛЕЙ НЕЛЬЗЯ ВКЛ. ОДНОВРЕМЕННО</i>» — прошивка показывает это предупреждение и не применяет изменения если активна противоположная фича.</p>
+          <p><b>Возможная причина:</b> BDC отображает дополнительные точки прицеливания (hash marks) для разных дистанций. Если включить Multi-BC, эффективный BC меняется со скоростью → на каждой дистанции BDC получится разный — визуальная сетка становится сложно интерпретируемой. OEM выбрал запретить комбинацию вместо объяснения.</p>
+          <p>В этом calculator такого ограничения нет — Multi-BC и любые расчёты на разных дистанциях работают независимо.</p>
         </div>
       </details>
     </div>
