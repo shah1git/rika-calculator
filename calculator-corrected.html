@@ -260,6 +260,13 @@ tr.zero td { background: rgba(126,226,168,.08); }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: #2a3140; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #3d4655; }
+
+        .field-hint { display: block; font-size: 10.5px; color: var(--fg-dim); line-height: 1.35; margin: 2px 0 6px 0; opacity: 0.85; grid-column: 1 / -1; }
+        .toggle + .field-hint { margin: -2px 0 6px 22px; grid-column: 1 / -1; }
+        .card[title] { cursor: help; }
+        .card-caption { font-size: 10.5px; color: var(--fg-dim); line-height: 1.3; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--rule); opacity: 0.8; }
+        .preset-btn[title] { cursor: help; }
+
 </style>
 </head>
 <body>
@@ -278,10 +285,10 @@ tr.zero td { background: rgba(126,226,168,.08); }
 <main>
   <aside class="inputs" id="inputs">
     <div class="preset-bar">
-      <button class="preset-btn" data-preset="308_168smk">.308 168gr SMK</button>
-      <button class="preset-btn" data-preset="338_300smk">.338 300gr SMK</button>
-      <button class="preset-btn" data-preset="65cm_140eldm">6.5CM 140gr ELD-M</button>
-      <button class="preset-btn" data-preset="223_77smk">.223 77gr SMK</button>
+      <button class="preset-btn" data-preset="308_168smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.308 168gr SMK</button>
+      <button class="preset-btn" data-preset="338_300smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.338 300gr SMK</button>
+      <button class="preset-btn" data-preset="65cm_140eldm" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">6.5CM 140gr ELD-M</button>
+      <button class="preset-btn" data-preset="223_77smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.223 77gr SMK</button>
     </div>
     <details class="profile-editor" style="margin-top:8px;">
       <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">✏️ Редактировать профили пуль</summary>
@@ -346,12 +353,16 @@ tr.zero td { background: rgba(126,226,168,.08); }
 
 
     <h3>Цель</h3>
-    <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10"></div>
-    <div class="field"><label>Пристрелка <span class="unit">м</span></label><input type="number" id="zeroDist" value="100" min="25" max="500" step="5"></div>
+    <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10" title="Дистанция до цели в метрах">
+      <span class="field-hint">На этой дистанции рассчитываются падение, боковой снос, скорость и энергия. Чем дальше — тем заметнее Кориолис и спин-дрифт.</span>
+    </div>
+    <div class="field"><label>Пристрелка <span class="unit">м</span></label><input type="number" id="zeroDist" value="100" min="25" max="500" step="5" title="Дистанция пристрелки в метрах">
+      <span class="field-hint">На ней траектория пересекает линию прицеливания (drop=0). Обычно 100 м. Угол пристрелки подбирается методом Ньютона.</span>
+    </div>
 
     <h3>Пуля</h3>
     <div class="field"><label>Профиль drag</label>
-      <select id="dragModel">
+      <select id="dragModel" title="Эталонная модель сопротивления воздуха">
         <option value="G1">G1</option>
         <option value="G2">G2</option>
         <option value="G5">G5</option>
@@ -359,43 +370,78 @@ tr.zero td { background: rgba(126,226,168,.08); }
         <option value="G7" selected>G7</option>
         <option value="G8">G8</option>
       </select>
+    
+      <span class="field-hint">G1 — традиционная (плоское донце), G7 — современная boat-tail. Для match-пуль предпочитайте G7.</span>
     </div>
-    <div class="field"><label>BC <span class="unit">lb/in²</span></label><input type="number" id="BC" value="0.218" min="0.05" max="2.0" step="0.001"></div>
-    <div class="field"><label>Начальная скорость <span class="unit">м/с</span></label><input type="number" id="muzzleV" value="817" min="200" max="1500" step="1"></div>
-    <div class="field"><label>Вес пули <span class="unit">grain</span></label><input type="number" id="mass_gr" value="168" min="30" max="800" step="1"></div>
-    <div class="field"><label>Диаметр <span class="unit">мм</span></label><input type="number" id="diameter_mm" value="7.82" min="4" max="15" step="0.01"></div>
-    <div class="field"><label>Длина пули <span class="unit">мм</span></label><input type="number" id="length_mm" value="31.2" min="10" max="60" step="0.1"></div>
+    <div class="field"><label>BC <span class="unit">lb/in²</span></label><input type="number" id="BC" value="0.218" min="0.05" max="2.0" step="0.001" title="Баллистический коэффициент пули">
+      <span class="field-hint">Берётся из таблиц производителя. Чем больше — меньше тормозит. У современных пуль публикуется как G1, так и G7.</span>
+    </div>
+    <div class="field"><label>Начальная скорость <span class="unit">м/с</span></label><input type="number" id="muzzleV" value="817" min="200" max="1500" step="1" title="Начальная скорость пули (MV)">
+      <span class="field-hint">Измеряется хронографом для конкретного оружия. Точность ±5 м/с критична: 10 м/с = ~5–10 см на 1000 м.</span>
+    </div>
+    <div class="field"><label>Вес пули <span class="unit">grain</span></label><input type="number" id="mass_gr" value="168" min="30" max="800" step="1" title="Масса пули в гранах">
+      <span class="field-hint">1 grain = 64.8 мг. Влияет на энергию (E=½mv²) и коэффициент стабильности SG.</span>
+    </div>
+    <div class="field"><label>Диаметр <span class="unit">мм</span></label><input type="number" id="diameter_mm" value="7.82" min="4" max="15" step="0.01" title="Диаметр пули в миллиметрах">
+      <span class="field-hint">.308=7.82, .338=8.59, .223=5.69, 6.5CM=6.71. Используется в формуле Miller stability.</span>
+    </div>
+    <div class="field"><label>Длина пули <span class="unit">мм</span></label><input type="number" id="length_mm" value="31.2" min="10" max="60" step="0.1" title="Длина пули в миллиметрах">
+      <span class="field-hint">Входит в Miller почти кубически — ошибка 10% по длине даёт ~30% по SG.</span>
+    </div>
 
     <h3>Прицел</h3>
-    <div class="field"><label>Высота прицела <span class="unit">мм</span></label><input type="number" id="sightHeight" value="38" min="10" max="100" step="1"></div>
+    <div class="field"><label>Высота прицела <span class="unit">мм</span></label><input type="number" id="sightHeight" value="38" min="10" max="100" step="1" title="Высота прицельной линии над осью ствола, мм">
+      <span class="field-hint">От центра окуляра до центра ствола. У типичной винтовки 30–50 мм. Заметнее на ближних дистанциях (до 200 м).</span>
+    </div>
 
     <h3>Атмосфера</h3>
-    <div class="field"><label>Температура <span class="unit">°C</span></label><input type="number" id="T_C" value="15" min="-40" max="50" step="1"></div>
-    <div class="field"><label>Давление <span class="unit">гПа</span></label><input type="number" id="P_hPa" value="1013" min="700" max="1100" step="1"></div>
-    <div class="field"><label>Влажность <span class="unit">%</span></label><input type="number" id="RH" value="50" min="0" max="100" step="5"></div>
+    <div class="field"><label>Температура <span class="unit">°C</span></label><input type="number" id="T_C" value="15" min="-40" max="50" step="1" title="Температура воздуха в °C">
+      <span class="field-hint">Холодный воздух плотнее → больше сопротивление → пуля падает сильнее. Точность ±2°C важна для дальних.</span>
+    </div>
+    <div class="field"><label>Давление <span class="unit">гПа</span></label><input type="number" id="P_hPa" value="1013" min="700" max="1100" step="1" title="Атмосферное давление в гПа">
+      <span class="field-hint">1013 гПа = ст. на уровне моря. На высоте 1000 м ≈ 900 гПа. Метеостанция / барометр / GPS-альтиметр.</span>
+    </div>
+    <div class="field"><label>Влажность <span class="unit">%</span></label><input type="number" id="RH" value="50" min="0" max="100" step="5" title="Относительная влажность в %">
+      <span class="field-hint">Парадоксально: влажный воздух менее плотный, чем сухой. Эффект на drop малый (~0.5%).</span>
+    </div>
 
     <h3>Ветер</h3>
-    <div class="field"><label>Скорость <span class="unit">м/с</span></label><input type="number" id="windV" value="0" min="0" max="30" step="0.5"></div>
-    <div class="field"><label>Направление <span class="unit">час</span></label><input type="number" id="windClock" value="3" min="1" max="12" step="0.5"></div>
+    <div class="field"><label>Скорость <span class="unit">м/с</span></label><input type="number" id="windV" value="0" min="0" max="30" step="0.5" title="Скорость ветра в м/с">
+      <span class="field-hint">Главный источник бокового сноса. На 1000 м боковой ветер 5 м/с даёт ~1 м сноса. Оцените на цели, не у стрелка.</span>
+    </div>
+    <div class="field"><label>Направление <span class="unit">час</span></label><input type="number" id="windClock" value="3" min="1" max="12" step="0.5" title="Направление ветра по циферблату часов">
+      <span class="field-hint">12=в лицо, 6=в спину, 3=слева направо, 9=справа налево. Стрелок в центре циферблата лицом к цели.</span>
+    </div>
 
     <h3>Земля</h3>
-    <div class="field"><label>Широта <span class="unit">°</span></label><input type="number" id="latitude" value="55" min="-90" max="90" step="1"></div>
-    <div class="field"><label>Азимут стрельбы <span class="unit">°</span></label><input type="number" id="azimuth" value="90" min="0" max="360" step="5"></div>
+    <div class="field"><label>Широта <span class="unit">°</span></label><input type="number" id="latitude" value="55" min="-90" max="90" step="1" title="Широта в десятичных градусах">
+      <span class="field-hint">Москва ≈ 55, Сочи ≈ 43, Мурманск ≈ 69. Положительная = северное полушарие. Влияет на Кориолис.</span>
+    </div>
+    <div class="field"><label>Азимут стрельбы <span class="unit">°</span></label><input type="number" id="azimuth" value="90" min="0" max="360" step="5" title="Азимут выстрела относительно севера">
+      <span class="field-hint">0=N, 90=E, 180=S, 270=W. Восток/запад дают максимум вертикальной составляющей Кориолиса (эффект Этвёша).</span>
+    </div>
 
     <h3>Ствол / нарезы</h3>
-    <div class="field"><label>Шаг нарезов <span class="unit">in</span></label><input type="number" id="twist" value="10" min="6" max="20" step="0.5"></div>
+    <div class="field"><label>Шаг нарезов <span class="unit">in</span></label><input type="number" id="twist" value="10" min="6" max="20" step="0.5" title="Шаг нарезки ствола в дюймах (1:N)">
+      <span class="field-hint">За сколько дюймов пуля делает один оборот. Меньше = быстрее. .308 = 1:10..1:12, .338 = 1:9..1:10.</span>
+    </div>
     <div class="field"><label>Направление</label>
-      <select id="riflingDir">
+      <select id="riflingDir" title="Направление нарезки">
         <option value="0">правая (→)</option>
         <option value="1">левая (←)</option>
       </select>
+    
+      <span class="field-hint">Большинство стволов имеют правую нарезку. Определяет знак спин-дрифта: правая → пулю сносит вправо.</span>
     </div>
 
     <h3>Коррекции</h3>
     <div class="toggles">
-      <label class="toggle"><input type="checkbox" id="useCoriolis" checked> Кориолис</label>
-      <label class="toggle"><input type="checkbox" id="useSpinDrift" checked> Деривация (Litz)</label>
-      <label class="toggle"><input type="checkbox" id="useDynamicBC"> Динамический BC</label>
+      <label class="toggle"><input type="checkbox" id="useCoriolis" checked title="Учитывать эффект Кориолиса"> Кориолис</label>
+    <span class="field-hint">Вращение Земли. На 1000 м эффект 3–7 см. Включайте для дистанций >500 м.</span>
+      <label class="toggle"><input type="checkbox" id="useSpinDrift" checked title="Учитывать боковой снос от вращения пули"> Деривация (Litz)</label>
+    <span class="field-hint">Spin drift (деривация) по формуле Litz. На 1000 м для .308 ≈ 19 см вправо при правой нарезке.</span>
+      <label class="toggle"><input type="checkbox" id="useDynamicBC" title="Динамический BC — коррекция по числу Маха"> Динамический BC</label>
+    <span class="field-hint">Эффективный BC меняется на ±5–15% между сверхзвуком и дозвуком. Работает только для G1/G7.</span>
     </div>
 
     <p style="font-size: 11px; color: var(--fg-dim); margin: 12px 6px 4px;">
@@ -410,14 +456,28 @@ tr.zero td { background: rgba(126,226,168,.08); }
 
     <h2>Результат на дистанции <span id="dispDist">—</span> м</h2>
     <div class="cards" id="cards">
-      <div class="card drop"><div class="lbl">Понижение</div><div class="val" id="dropCm">—</div><div class="alt" id="dropMoa">—</div></div>
-      <div class="card wind"><div class="lbl">Боковое</div><div class="val" id="windCm">—</div><div class="alt" id="windMoa">—</div></div>
-      <div class="card"><div class="lbl">Время полёта</div><div class="val" id="tof">—</div><div class="alt">сек</div></div>
-      <div class="card"><div class="lbl">Скорость в цели</div><div class="val" id="vFinal">—</div><div class="alt" id="vMach">—</div></div>
-      <div class="card"><div class="lbl">Энергия</div><div class="val" id="energy">—</div><div class="alt">Дж</div></div>
-      <div class="card"><div class="lbl">Stability (SG)</div><div class="val" id="sg">—</div><div class="alt" id="sgComment">—</div></div>
-      <div class="card cor"><div class="lbl">Вклад Кориолиса</div><div class="val" id="corCm">—</div><div class="alt" id="corDir">—</div></div>
-      <div class="card drift"><div class="lbl">Вклад деривации</div><div class="val" id="driftCm">—</div><div class="alt" id="driftDir">—</div></div>
+      <div class="card drop" title="Падение пули ниже линии прицеливания на цели"><div class="lbl">Понижение</div><div class="val" id="dropCm">—</div><div class="alt" id="dropMoa">—</div>
+        <div class="card-caption">Поправка вверх для прицела. Положительное = пуля ниже линии прицеливания.</div>
+      </div>
+      <div class="card wind" title="Суммарный боковой снос на цели"><div class="lbl">Боковое</div><div class="val" id="windCm">—</div><div class="alt" id="windMoa">—</div>
+        <div class="card-caption">Ветер + Кориолис + спин-дрифт вместе. Положительное = вправо.</div>
+      </div>
+      <div class="card" title="Time of Flight — время полёта пули до цели"><div class="lbl">Время полёта</div><div class="val" id="tof">—</div><div class="alt">сек</div></div>
+      <div class="card" title="Скорость пули в момент попадания"><div class="lbl">Скорость в цели</div><div class="val" id="vFinal">—</div><div class="alt" id="vMach">—</div>
+        <div class="card-caption">M = число Маха (V/Vзвука). Около M=1 — трансзвуковая зона.</div>
+      </div>
+      <div class="card" title="Кинетическая энергия пули в Джоулях"><div class="lbl">Энергия</div><div class="val" id="energy">—</div><div class="alt">Дж</div>
+        <div class="card-caption">E = ½·m·v². Падает с расстоянием через квадрат скорости.</div>
+      </div>
+      <div class="card" title="Stability Coefficient (Miller)"><div class="lbl">Stability (SG)</div><div class="val" id="sg">—</div><div class="alt" id="sgComment">—</div>
+        <div class="card-caption">>1.5 — стабильна; 1.0–1.5 — marginal; <1.0 — кувыркается.</div>
+      </div>
+      <div class="card cor" title="Эффект Кориолиса на цели"><div class="lbl">Вклад Кориолиса</div><div class="val" id="corCm">—</div><div class="alt" id="corDir">—</div>
+        <div class="card-caption">Боковое + вертикальное смещение из-за вращения Земли.</div>
+      </div>
+      <div class="card drift" title="Боковой снос от вращения пули (Litz spin drift)"><div class="lbl">Вклад деривации</div><div class="val" id="driftCm">—</div><div class="alt" id="driftDir">—</div>
+        <div class="card-caption">Зависит от SG, времени полёта и направления нарезки.</div>
+      </div>
     </div>
 
     <h2>Профиль траектории</h2>
@@ -1062,7 +1122,7 @@ function renderPresetBar() {
   const bar = document.querySelector(".preset-bar");
   if (!bar) return;
   bar.innerHTML = Object.entries(savedProfiles).map(([id, p]) =>
-    `<button class="preset-btn" data-preset="${escapeHtml(id)}">${escapeHtml(p.name || id)}</button>`
+    `<button class="preset-btn" data-preset="${escapeHtml(id)}" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">${escapeHtml(p.name || id)}</button>`
   ).join("");
 }
 
