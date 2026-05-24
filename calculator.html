@@ -260,13 +260,6 @@ tr.zero td { background: rgba(126,226,168,.08); }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: #2a3140; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #3d4655; }
-
-        .field-hint { display: block; font-size: 10.5px; color: var(--fg-dim); line-height: 1.35; margin: 2px 0 6px 0; opacity: 0.85; grid-column: 1 / -1; }
-        .toggle + .field-hint { margin: -2px 0 6px 22px; grid-column: 1 / -1; }
-        .card[title] { cursor: help; }
-        .card-caption { font-size: 10.5px; color: var(--fg-dim); line-height: 1.3; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--rule); opacity: 0.8; }
-        .preset-btn[title] { cursor: help; }
-
 </style>
 </head>
 <body>
@@ -285,84 +278,19 @@ tr.zero td { background: rgba(126,226,168,.08); }
 <main>
   <aside class="inputs" id="inputs">
     <div class="preset-bar">
-      <button class="preset-btn" data-preset="308_168smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.308 168gr SMK</button>
-      <button class="preset-btn" data-preset="338_300smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.338 300gr SMK</button>
-      <button class="preset-btn" data-preset="65cm_140eldm" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">6.5CM 140gr ELD-M</button>
-      <button class="preset-btn" data-preset="223_77smk" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">.223 77gr SMK</button>
+      <button class="preset-btn" data-preset="308_168smk">.308 168gr SMK</button>
+      <button class="preset-btn" data-preset="338_300smk">.338 300gr SMK</button>
+      <button class="preset-btn" data-preset="65cm_140eldm">6.5CM 140gr ELD-M</button>
+      <button class="preset-btn" data-preset="223_77smk">.223 77gr SMK</button>
     </div>
-    <details class="profile-editor" style="margin-top:8px;">
-      <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">✏️ Редактировать профили пуль</summary>
-      <style>
-        .profile-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; transition: border-color .15s, background .15s; }
-        .profile-card.is-dirty { border-color: #d49a4e; background: rgba(212, 154, 78, .05); }
-        .profile-card.is-invalid { border-color: var(--bad); background: rgba(255, 115, 115, .05); }
-        .profile-card-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
-        .profile-card-head .profile-name { flex: 1; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-size: 12px; font-weight: 600; }
-        .dirty-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(212, 154, 78, .15); color: #d49a4e; border: 1px solid #d49a4e; text-transform: lowercase; letter-spacing: .3px; font-weight: 600; flex-shrink: 0; }
-        .dirty-badge.new { background: rgba(126, 226, 168, .12); color: var(--good); border-color: var(--good); }
-        .profile-card-actions { display: flex; gap: 2px; }
-        .profile-card-actions button { padding: 2px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg-dim); cursor: pointer; font-size: 12px; line-height: 1; }
-        .profile-card-actions button:hover { color: var(--accent); }
-        .profile-card-actions .del-btn:hover { color: var(--bad); border-color: var(--bad); }
-        .profile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 11px; }
-        .profile-fields label { display: flex; justify-content: space-between; align-items: center; gap: 4px; color: var(--fg-dim); }
-        .profile-fields input, .profile-fields select { width: 75px; padding: 2px 4px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-family: "SF Mono", Menlo, monospace; font-size: 11px; text-align: right; }
-        .profile-fields select { text-align: left; }
-        .profile-fields input:invalid { border-color: var(--bad); }
-        .profile-errors { margin-top: 6px; padding: 6px 8px; background: rgba(255, 115, 115, .07); border-left: 2px solid var(--bad); border-radius: 0 3px 3px 0; font-size: 11px; color: var(--bad); line-height: 1.4; }
-        .profile-editor .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); }
-        .save-bar { display: none; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; background: rgba(212, 154, 78, .08); border: 1px solid #d49a4e; border-radius: 4px; }
-        .save-bar .save-bar-status { flex: 1; font-size: 11.5px; color: #d49a4e; font-weight: 600; line-height: 1.4; }
-        .save-bar button { padding: 5px 12px; border: 1px solid var(--rule); border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .save-bar #save-profiles-btn { background: var(--good); color: #0c1c14; border-color: var(--good); }
-        .save-bar #save-profiles-btn:hover:not(:disabled) { background: #93eebd; }
-        .save-bar #save-profiles-btn:disabled { background: var(--bg-input); color: var(--fg-dim); cursor: not-allowed; border-color: var(--rule); }
-        .save-bar #discard-profiles-btn { background: var(--bg-input); color: var(--fg); }
-        .save-bar #discard-profiles-btn:hover { color: var(--bad); border-color: var(--bad); }
-        .scenario-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 0 0; }
-      </style>
-      <div style="padding:10px 0 4px 0;">
-        <div id="profile-list" style="display:flex; flex-direction:column; gap:6px;"></div>
-        <div class="editor-toolbar">
-          <button id="add-profile-btn" class="preset-btn" type="button">+ Добавить</button>
-          <button id="reset-profiles-btn" class="preset-btn" type="button">↺ Дефолты</button>
-          <button id="export-profiles-btn" class="preset-btn" type="button">⬇ Экспорт</button>
-          <button id="import-profiles-btn" class="preset-btn" type="button">⬆ Импорт</button>
-          <input type="file" id="import-profiles-file" style="display:none" accept=".json,application/json">
-        </div>
-        <div class="save-bar" id="save-bar">
-          <div class="save-bar-status" id="save-bar-status">Несохранённые изменения</div>
-          <button id="discard-profiles-btn" type="button" title="Esc">Отмена</button>
-          <button id="save-profiles-btn" type="button" title="Cmd/Ctrl+S">Сохранить</button>
-        </div>
-        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Изменения остаются в редакторе пока вы не нажмёте «Сохранить». Профили хранятся в браузере (localStorage). Горячие клавиши: <code>Cmd/Ctrl+S</code> — сохранить, <code>Esc</code> — отменить.</p>
-      </div>
-    </details>
-
-    <details class="snapshot-tools" style="margin-top:8px;">
-      <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">📁 Сценарий — сохранить/загрузить расчёт</summary>
-      <div style="padding:10px 0 4px 0;">
-        <div class="scenario-tools">
-          <button id="export-snapshot-btn" class="preset-btn" type="button" title="Сохранить текущий ввод + результат в JSON">⬇ Сохранить сценарий</button>
-          <button id="import-snapshot-btn" class="preset-btn" type="button" title="Загрузить ранее сохранённый сценарий">⬆ Загрузить сценарий</button>
-          <input type="file" id="import-snapshot-file" style="display:none" accept=".json,application/json">
-        </div>
-        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Сохраняет JSON со всеми входными параметрами + результатом расчёта + режимом (mirror/corrected) + timestamp. Файл можно передать для анализа или использовать как backup конкретного сценария.</p>
-      </div>
-    </details>
-
 
     <h3>Цель</h3>
-    <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10" title="Дистанция до цели в метрах">
-      <span class="field-hint">На этой дистанции рассчитываются падение, боковой снос, скорость и энергия. Чем дальше — тем заметнее Кориолис и спин-дрифт.</span>
-    </div>
-    <div class="field"><label>Пристрелка <span class="unit">м</span></label><input type="number" id="zeroDist" value="100" min="25" max="500" step="5" title="Дистанция пристрелки в метрах">
-      <span class="field-hint">На ней траектория пересекает линию прицеливания (drop=0). Обычно 100 м. Угол пристрелки подбирается методом Ньютона.</span>
-    </div>
+    <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10"></div>
+    <div class="field"><label>Пристрелка <span class="unit">м</span></label><input type="number" id="zeroDist" value="100" min="25" max="500" step="5"></div>
 
     <h3>Пуля</h3>
     <div class="field"><label>Профиль drag</label>
-      <select id="dragModel" title="Эталонная модель сопротивления воздуха">
+      <select id="dragModel">
         <option value="G1">G1</option>
         <option value="G2">G2</option>
         <option value="G5">G5</option>
@@ -370,81 +298,46 @@ tr.zero td { background: rgba(126,226,168,.08); }
         <option value="G7" selected>G7</option>
         <option value="G8">G8</option>
       </select>
-    
-      <span class="field-hint">G1 — традиционная (плоское донце), G7 — современная boat-tail. Для match-пуль предпочитайте G7.</span>
     </div>
-    <div class="field"><label>BC <span class="unit">lb/in²</span></label><input type="number" id="BC" value="0.218" min="0.05" max="2.0" step="0.001" title="Баллистический коэффициент пули">
-      <span class="field-hint">Берётся из таблиц производителя. Чем больше — меньше тормозит. У современных пуль публикуется как G1, так и G7.</span>
-    </div>
-    <div class="field"><label>Начальная скорость <span class="unit">м/с</span></label><input type="number" id="muzzleV" value="817" min="200" max="1500" step="1" title="Начальная скорость пули (MV)">
-      <span class="field-hint">Измеряется хронографом для конкретного оружия. Точность ±5 м/с критична: 10 м/с = ~5–10 см на 1000 м.</span>
-    </div>
-    <div class="field"><label>Вес пули <span class="unit">grain</span></label><input type="number" id="mass_gr" value="168" min="30" max="800" step="1" title="Масса пули в гранах">
-      <span class="field-hint">1 grain = 64.8 мг. Влияет на энергию (E=½mv²) и коэффициент стабильности SG.</span>
-    </div>
-    <div class="field" style="opacity:0.5;"><label>Диаметр <span class="unit">мм</span> <span style="color:#aa6644; font-size:10px; font-weight:700;">🔒 IGNORED</span></label><input type="number" id="diameter_mm" value="7.82" min="4" max="15" step="0.01" disabled style="background:#2a2a2a; color:#888; cursor:not-allowed;" title="Диаметр пули в миллиметрах">
-      <span class="field-hint">.308=7.82, .338=8.59, .223=5.69, 6.5CM=6.71. Используется в формуле Miller stability.</span>
-    </div>
-    <div class="field" style="opacity:0.5;"><label>Длина пули <span class="unit">мм</span> <span style="color:#aa6644; font-size:10px; font-weight:700;">🔒 IGNORED</span></label><input type="number" id="length_mm" value="31.2" min="10" max="60" step="0.1" disabled style="background:#2a2a2a; color:#888; cursor:not-allowed;" title="Длина пули в миллиметрах">
-      <span class="field-hint">Входит в Miller почти кубически — ошибка 10% по длине даёт ~30% по SG.</span>
-    </div>
+    <div class="field"><label>BC <span class="unit">lb/in²</span></label><input type="number" id="BC" value="0.218" min="0.05" max="2.0" step="0.001"></div>
+    <div class="field"><label>Начальная скорость <span class="unit">м/с</span></label><input type="number" id="muzzleV" value="817" min="200" max="1500" step="1"></div>
+    <div class="field"><label>Вес пули <span class="unit">grain</span></label><input type="number" id="mass_gr" value="168" min="30" max="800" step="1"></div>
+    <div class="field" style="opacity:0.5;"><label>Диаметр <span class="unit">мм</span> <span style="color:#aa6644; font-size:10px; font-weight:700;">🔒 IGNORED</span></label><input type="number" id="diameter_mm" value="7.82" min="4" max="15" step="0.01" disabled style="background:#2a2a2a; color:#888; cursor:not-allowed;"></div>
+    <div class="field" style="opacity:0.5;"><label>Длина пули <span class="unit">мм</span> <span style="color:#aa6644; font-size:10px; font-weight:700;">🔒 IGNORED</span></label><input type="number" id="length_mm" value="31.2" min="10" max="60" step="0.1" disabled style="background:#2a2a2a; color:#888; cursor:not-allowed;"></div>
     <div style="background:rgba(170,100,68,0.12); border-left:3px solid #aa6644; padding:8px 10px; margin:4px 0 10px 0; font-size:12px; color:#d4b094; line-height:1.5; border-radius:3px;">
       🔒 <b>BUG-006:</b> Прошивка <b>игнорирует</b> эти поля. Внутри жёстко прошиты значения для калибра .223 (диаметр 5,69 мм, длина 22,86 мм). Что бы вы тут ни ввели — расчёт стабильности будет считаться под .223. В <a href="calculator-corrected.html" style="color:#a3e4a3;">corrected-версии</a> эти поля работают.
     </div>
 
     <h3>Прицел</h3>
-    <div class="field"><label>Высота прицела <span class="unit">мм</span></label><input type="number" id="sightHeight" value="38" min="10" max="100" step="1" title="Высота прицельной линии над осью ствола, мм">
-      <span class="field-hint">От центра окуляра до центра ствола. У типичной винтовки 30–50 мм. Заметнее на ближних дистанциях (до 200 м).</span>
-    </div>
+    <div class="field"><label>Высота прицела <span class="unit">мм</span></label><input type="number" id="sightHeight" value="38" min="10" max="100" step="1"></div>
 
     <h3>Атмосфера</h3>
-    <div class="field"><label>Температура <span class="unit">°C</span></label><input type="number" id="T_C" value="15" min="-40" max="50" step="1" title="Температура воздуха в °C">
-      <span class="field-hint">Холодный воздух плотнее → больше сопротивление → пуля падает сильнее. Точность ±2°C важна для дальних.</span>
-    </div>
-    <div class="field"><label>Давление <span class="unit">гПа</span></label><input type="number" id="P_hPa" value="1013" min="700" max="1100" step="1" title="Атмосферное давление в гПа">
-      <span class="field-hint">1013 гПа = ст. на уровне моря. На высоте 1000 м ≈ 900 гПа. Метеостанция / барометр / GPS-альтиметр.</span>
-    </div>
-    <div class="field"><label>Влажность <span class="unit">%</span></label><input type="number" id="RH" value="50" min="0" max="100" step="5" title="Относительная влажность в %">
-      <span class="field-hint">Парадоксально: влажный воздух менее плотный, чем сухой. Эффект на drop малый (~0.5%).</span>
-    </div>
+    <div class="field"><label>Температура <span class="unit">°C</span></label><input type="number" id="T_C" value="15" min="-40" max="50" step="1"></div>
+    <div class="field"><label>Давление <span class="unit">гПа</span></label><input type="number" id="P_hPa" value="1013" min="700" max="1100" step="1"></div>
+    <div class="field"><label>Влажность <span class="unit">%</span></label><input type="number" id="RH" value="50" min="0" max="100" step="5"></div>
 
     <h3>Ветер</h3>
-    <div class="field"><label>Скорость <span class="unit">м/с</span></label><input type="number" id="windV" value="0" min="0" max="30" step="0.5" title="Скорость ветра в м/с">
-      <span class="field-hint">Главный источник бокового сноса. На 1000 м боковой ветер 5 м/с даёт ~1 м сноса. Оцените на цели, не у стрелка.</span>
-    </div>
-    <div class="field"><label>Направление <span class="unit">час</span></label><input type="number" id="windClock" value="3" min="1" max="12" step="0.5" title="Направление ветра по циферблату часов">
-      <span class="field-hint">12=в лицо, 6=в спину, 3=слева направо, 9=справа налево. Стрелок в центре циферблата лицом к цели.</span>
-    </div>
+    <div class="field"><label>Скорость <span class="unit">м/с</span></label><input type="number" id="windV" value="0" min="0" max="30" step="0.5"></div>
+    <div class="field"><label>Направление <span class="unit">час</span></label><input type="number" id="windClock" value="3" min="1" max="12" step="0.5"></div>
 
     <h3>Земля</h3>
-    <div class="field"><label>Широта <span class="unit">°</span></label><input type="number" id="latitude" value="55" min="-90" max="90" step="1" title="Широта в десятичных градусах">
-      <span class="field-hint">Москва ≈ 55, Сочи ≈ 43, Мурманск ≈ 69. Положительная = северное полушарие. Влияет на Кориолис.</span>
-    </div>
-    <div class="field"><label>Азимут стрельбы <span class="unit">°</span></label><input type="number" id="azimuth" value="90" min="0" max="360" step="5" title="Азимут выстрела относительно севера">
-      <span class="field-hint">0=N, 90=E, 180=S, 270=W. Восток/запад дают максимум вертикальной составляющей Кориолиса (эффект Этвёша).</span>
-    </div>
+    <div class="field"><label>Широта <span class="unit">°</span></label><input type="number" id="latitude" value="55" min="-90" max="90" step="1"></div>
+    <div class="field"><label>Азимут стрельбы <span class="unit">°</span></label><input type="number" id="azimuth" value="90" min="0" max="360" step="5"></div>
 
     <h3>Ствол / нарезы</h3>
-    <div class="field"><label>Шаг нарезов <span class="unit">in</span></label><input type="number" id="twist" value="10" min="6" max="20" step="0.5" title="Шаг нарезки ствола в дюймах (1:N)">
-      <span class="field-hint">За сколько дюймов пуля делает один оборот. Меньше = быстрее. .308 = 1:10..1:12, .338 = 1:9..1:10.</span>
-    </div>
+    <div class="field"><label>Шаг нарезов <span class="unit">in</span></label><input type="number" id="twist" value="10" min="6" max="20" step="0.5"></div>
     <div class="field"><label>Направление</label>
-      <select id="riflingDir" title="Направление нарезки">
+      <select id="riflingDir">
         <option value="0">правая (→)</option>
         <option value="1">левая (←)</option>
       </select>
-    
-      <span class="field-hint">Большинство стволов имеют правую нарезку. Определяет знак спин-дрифта: правая → пулю сносит вправо.</span>
     </div>
 
     <h3>Коррекции</h3>
     <div class="toggles">
-      <label class="toggle"><input type="checkbox" id="useCoriolis" checked title="Учитывать эффект Кориолиса"> Кориолис</label>
-    <span class="field-hint">Вращение Земли. На 1000 м эффект 3–7 см. Включайте для дистанций >500 м.</span>
-      <label class="toggle"><input type="checkbox" id="useSpinDrift" checked title="Учитывать боковой снос от вращения пули"> Деривация (Litz)</label>
-    <span class="field-hint">Spin drift (деривация) по формуле Litz. На 1000 м для .308 ≈ 19 см вправо при правой нарезке.</span>
-      <label class="toggle"><input type="checkbox" id="useDynamicBC" title="Динамический BC — коррекция по числу Маха"> Динамический BC</label>
-    <span class="field-hint">Эффективный BC меняется на ±5–15% между сверхзвуком и дозвуком. Работает только для G1/G7.</span>
+      <label class="toggle"><input type="checkbox" id="useCoriolis" checked> Кориолис</label>
+      <label class="toggle"><input type="checkbox" id="useSpinDrift" checked> Деривация (Litz)</label>
+      <label class="toggle"><input type="checkbox" id="useDynamicBC"> Динамический BC</label>
     </div>
 
     <p style="font-size: 11px; color: var(--fg-dim); margin: 12px 6px 4px;">
@@ -459,28 +352,14 @@ tr.zero td { background: rgba(126,226,168,.08); }
 
     <h2>Результат на дистанции <span id="dispDist">—</span> м</h2>
     <div class="cards" id="cards">
-      <div class="card drop" title="Падение пули ниже линии прицеливания на цели"><div class="lbl">Понижение</div><div class="val" id="dropCm">—</div><div class="alt" id="dropMoa">—</div>
-        <div class="card-caption">Поправка вверх для прицела. Положительное = пуля ниже линии прицеливания.</div>
-      </div>
-      <div class="card wind" title="Суммарный боковой снос на цели"><div class="lbl">Боковое</div><div class="val" id="windCm">—</div><div class="alt" id="windMoa">—</div>
-        <div class="card-caption">Ветер + Кориолис + спин-дрифт вместе. Положительное = вправо.</div>
-      </div>
-      <div class="card" title="Time of Flight — время полёта пули до цели"><div class="lbl">Время полёта</div><div class="val" id="tof">—</div><div class="alt">сек</div></div>
-      <div class="card" title="Скорость пули в момент попадания"><div class="lbl">Скорость в цели</div><div class="val" id="vFinal">—</div><div class="alt" id="vMach">—</div>
-        <div class="card-caption">M = число Маха (V/Vзвука). Около M=1 — трансзвуковая зона.</div>
-      </div>
-      <div class="card" title="Кинетическая энергия пули в Джоулях"><div class="lbl">Энергия</div><div class="val" id="energy">—</div><div class="alt">Дж</div>
-        <div class="card-caption">E = ½·m·v². Падает с расстоянием через квадрат скорости.</div>
-      </div>
-      <div class="card" title="Stability Coefficient (Miller)"><div class="lbl">Stability (SG)</div><div class="val" id="sg">—</div><div class="alt" id="sgComment">—</div>
-        <div class="card-caption">>1.5 — стабильна; 1.0–1.5 — marginal; <1.0 — кувыркается.</div>
-      </div>
-      <div class="card cor" title="Эффект Кориолиса на цели"><div class="lbl">Вклад Кориолиса</div><div class="val" id="corCm">—</div><div class="alt" id="corDir">—</div>
-        <div class="card-caption">Боковое + вертикальное смещение из-за вращения Земли.</div>
-      </div>
-      <div class="card drift" title="Боковой снос от вращения пули (Litz spin drift)"><div class="lbl">Вклад деривации</div><div class="val" id="driftCm">—</div><div class="alt" id="driftDir">—</div>
-        <div class="card-caption">Зависит от SG, времени полёта и направления нарезки.</div>
-      </div>
+      <div class="card drop"><div class="lbl">Понижение</div><div class="val" id="dropCm">—</div><div class="alt" id="dropMoa">—</div></div>
+      <div class="card wind"><div class="lbl">Боковое</div><div class="val" id="windCm">—</div><div class="alt" id="windMoa">—</div></div>
+      <div class="card"><div class="lbl">Время полёта</div><div class="val" id="tof">—</div><div class="alt">сек</div></div>
+      <div class="card"><div class="lbl">Скорость в цели</div><div class="val" id="vFinal">—</div><div class="alt" id="vMach">—</div></div>
+      <div class="card"><div class="lbl">Энергия</div><div class="val" id="energy">—</div><div class="alt">Дж</div></div>
+      <div class="card"><div class="lbl">Stability (SG)</div><div class="val" id="sg">—</div><div class="alt" id="sgComment">—</div></div>
+      <div class="card cor"><div class="lbl">Вклад Кориолиса</div><div class="val" id="corCm">—</div><div class="alt" id="corDir">—</div></div>
+      <div class="card drift"><div class="lbl">Вклад деривации</div><div class="val" id="driftCm">—</div><div class="alt" id="driftDir">—</div></div>
     </div>
 
     <h2>Профиль траектории</h2>
@@ -523,642 +402,1273 @@ tr.zero td { background: rgba(126,226,168,.08); }
 </main>
 
 <script>
-const MODE = "mirror";
-// =============================================================================
-// Frontend caller for rika-calc-api Cloudflare Worker.
-// Алгоритм баллистики живёт на сервере (приватный код), здесь — только UI
-// и формирование запросов. Plus draft-buffered профили пуль с explicit save.
-// =============================================================================
-const API_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:") ? "http://localhost:8787/calc" : "https://rika-ballistic-calc.shahanov.workers.dev/calc";
-
-const $ = id => document.getElementById(id).value;
-const $n = id => parseFloat(document.getElementById(id).value);
-const $c = id => document.getElementById(id).checked;
-
-const DEFAULT_PROFILES = {
-  "308_168smk":   { name: ".308 168gr SMK",   dragModel: "G7", BC: 0.218, muzzleV: 817, mass_gr: 168, diameter_mm: 7.82, length_mm: 31.2, twist: 11.25 },
-  "338_300smk":   { name: ".338 300gr SMK",   dragModel: "G7", BC: 0.420, muzzleV: 820, mass_gr: 300, diameter_mm: 8.59, length_mm: 41.9, twist: 9.35 },
-  "65cm_140eldm": { name: "6.5CM 140gr ELD-M",dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140, diameter_mm: 6.71, length_mm: 35.6, twist: 8.0 },
-  "223_77smk":    { name: ".223 77gr SMK",    dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,  diameter_mm: 5.69, length_mm: 24.9, twist: 7.0 },
+// ===================================================================
+// Drag tables: extracted from lesnik/unpacked/rootfs/data/coefficient_table.bin
+// ===================================================================
+// Drag tables extracted from lesnik/unpacked/rootfs/data/coefficient_table.bin
+// Each table: array of [mach, Cd] pairs, monotonic in mach.
+// Mapping by Cd₀: 0.2629=G1, 0.2303=G2, 0.1710=G5, 0.2617=G6, 0.1198=G7, 0.2105=G8
+const DRAG_TABLES = {
+  G1: [[0.0000,0.262900],[0.0500,0.255800],[0.1000,0.248700],[0.1500,0.241300],[0.2000,0.234400],[0.2500,0.227800],[0.3000,0.221400],[0.3500,0.215500],[0.4000,0.210400],[0.4500,0.206100],[0.5000,0.203200],[0.5500,0.202000],[0.6000,0.203400],[0.7000,0.216500],[0.7250,0.223000],[0.7500,0.231300],[0.7750,0.241700],[0.8000,0.254600],[0.8250,0.270600],[0.8500,0.290100],[0.8750,0.313600],[0.9000,0.341500],[0.9250,0.373400],[0.9500,0.408400],[0.9750,0.444800],[1.0000,0.480500],[1.0250,0.513600],[1.0500,0.542700],[1.0750,0.567700],[1.1000,0.588300],[1.1250,0.605300],[1.1500,0.619100],[1.2000,0.639300],[1.2500,0.651800],[1.3000,0.658900],[1.3500,0.662100],[1.4000,0.662500],[1.4500,0.660700],[1.5000,0.657300],[1.5500,0.652800],[1.6000,0.647400],[1.6500,0.641300],[1.7000,0.634700],[1.7500,0.628000],[1.8000,0.621000],[1.8500,0.614100],[1.9000,0.607200],[1.9500,0.600300],[2.0000,0.593400],[2.0500,0.586700],[2.1000,0.580400],[2.1500,0.574300],[2.2000,0.568500],[2.2500,0.563000],[2.3000,0.557700],[2.3500,0.552700],[2.4000,0.548100],[2.4500,0.543800],[2.5000,0.539700],[2.6000,0.532500],[2.7000,0.526400],[2.8000,0.521100],[2.9000,0.516800],[3.0000,0.513300],[3.1000,0.510500],[3.2000,0.508400],[3.3000,0.506700],[3.4000,0.505400],[3.5000,0.504000],[3.6000,0.503000],[3.7000,0.502200],[3.8000,0.501600],[3.9000,0.501000],[4.0000,0.500600],[4.2000,0.499800],[4.4000,0.499500],[4.6000,0.499200],[4.8000,0.499000],[5.0000,0.498800]],
+  G2: [[0.0000,0.230300],[0.0500,0.229800],[0.1000,0.228700],[0.1500,0.227100],[0.2000,0.225100],[0.2500,0.222700],[0.3000,0.219600],[0.3500,0.215600],[0.4000,0.210700],[0.4500,0.204800],[0.5000,0.198000],[0.5500,0.190500],[0.6000,0.182800],[0.6500,0.175800],[0.7000,0.170200],[0.7500,0.166900],[0.7750,0.166400],[0.8000,0.166700],[0.8250,0.168200],[0.8500,0.171100],[0.8750,0.176100],[0.9000,0.183100],[0.9250,0.200400],[0.9500,0.258900],[0.9750,0.349200],[1.0000,0.398300],[1.0250,0.407500],[1.0500,0.410300],[1.0750,0.411400],[1.1000,0.410600],[1.1250,0.408900],[1.1500,0.406800],[1.1750,0.404600],[1.2000,0.402100],[1.2500,0.396600],[1.3000,0.390400],[1.3500,0.383500],[1.4000,0.375900],[1.4500,0.367800],[1.5000,0.359400],[1.5500,0.351200],[1.6000,0.343200],[1.6500,0.335600],[1.7000,0.328200],[1.7500,0.321300],[1.8000,0.314900],[1.8500,0.308900],[1.9000,0.303300],[1.9500,0.298200],[2.0000,0.293300],[2.0500,0.288900],[2.1000,0.284600],[2.1500,0.280600],[2.2000,0.276800],[2.2500,0.273100],[2.3000,0.269600],[2.3500,0.266300],[2.4000,0.263200],[2.4500,0.260200],[2.5000,0.257200],[2.5500,0.254300],[2.6000,0.251500],[2.6500,0.248700],[2.7000,0.246000],[2.7500,0.243300],[2.8000,0.240800],[2.8500,0.238200],[2.9000,0.235700],[2.9500,0.233300],[3.0000,0.230900],[3.1000,0.226200],[3.2000,0.221700],[3.3000,0.217300],[3.4000,0.213200],[3.5000,0.209100],[3.6000,0.205200]],
+  G5: [[0.0000,0.171000],[0.0500,0.171900],[0.1000,0.172700],[0.1500,0.173200],[0.2000,0.173400],[0.2500,0.173000],[0.3000,0.171800],[0.3500,0.169600],[0.4000,0.166800],[0.4500,0.163700],[0.5000,0.160300],[0.5500,0.156600],[0.6000,0.152900],[0.6500,0.149700],[0.7000,0.147300],[0.7500,0.146300],[0.8000,0.148900],[0.8500,0.158300],[0.8750,0.167200],[0.9000,0.181500],[0.9250,0.205100],[0.9500,0.241300],[0.9750,0.288400],[1.0000,0.337900],[1.0250,0.378500],[1.0500,0.403200],[1.0750,0.414700],[1.1000,0.420100],[1.1500,0.427800],[1.2000,0.433800],[1.2500,0.437300],[1.3000,0.439200],[1.3500,0.440300],[1.4000,0.440600],[1.4500,0.440100],[1.5000,0.438600],[1.5500,0.436200],[1.6000,0.432800],[1.6500,0.428600],[1.7000,0.423700],[1.7500,0.418200],[1.8000,0.412100],[1.8500,0.405700],[1.9000,0.399100],[1.9500,0.392600],[2.0000,0.386100],[2.0500,0.380000],[2.1000,0.374100],[2.1500,0.368400],[2.2000,0.363000],[2.2500,0.357800],[2.3000,0.352900],[2.3500,0.348100],[2.4000,0.343500],[2.4500,0.339100],[2.5000,0.334900],[2.6000,0.326900],[2.7000,0.319400],[2.8000,0.312500],[2.9000,0.306000],[3.0000,0.299900],[3.1000,0.294200],[3.2000,0.288900],[3.3000,0.283800],[3.4000,0.279000],[3.5000,0.274500],[3.6000,0.270300],[3.7000,0.266200],[3.8000,0.262400],[3.9000,0.258800],[4.0000,0.255300],[4.2000,0.248800],[4.4000,0.242900],[4.6000,0.237600],[4.8000,0.232600],[5.0000,0.228000]],
+  G6: [[0.0000,0.261700],[0.0500,0.255300],[0.1000,0.249100],[0.1500,0.243200],[0.2000,0.237600],[0.2500,0.232400],[0.3000,0.227800],[0.3500,0.223800],[0.4000,0.220500],[0.4500,0.217700],[0.5000,0.215500],[0.5500,0.213800],[0.6000,0.212600],[0.6500,0.212100],[0.7000,0.212200],[0.7500,0.213200],[0.8000,0.215400],[0.8500,0.219400],[0.8750,0.222900],[0.9000,0.229700],[0.9250,0.244900],[0.9500,0.273200],[0.9750,0.314100],[1.0000,0.359700],[1.0250,0.399400],[1.0500,0.426100],[1.0750,0.440200],[1.1000,0.446500],[1.1250,0.449000],[1.1500,0.449700],[1.1750,0.449400],[1.2000,0.448200],[1.2250,0.446400],[1.2500,0.444100],[1.3000,0.439000],[1.3500,0.433600],[1.4000,0.427900],[1.4500,0.422100],[1.5000,0.416200],[1.5500,0.410200],[1.6000,0.404200],[1.6500,0.398100],[1.7000,0.391900],[1.7500,0.385500],[1.8000,0.378800],[1.8500,0.372100],[1.9000,0.365200],[1.9500,0.358300],[2.0000,0.351500],[2.0500,0.344700],[2.1000,0.338100],[2.1500,0.331400],[2.2000,0.324900],[2.2500,0.318500],[2.3000,0.312200],[2.3500,0.306000],[2.4000,0.300000],[2.4500,0.294100],[2.5000,0.288300],[2.6000,0.277200],[2.7000,0.266800],[2.8000,0.257400],[2.9000,0.248700],[3.0000,0.240700],[3.1000,0.233300],[3.2000,0.226500],[3.3000,0.220200],[3.4000,0.214400],[3.5000,0.208900],[3.6000,0.203900],[3.7000,0.199100],[3.8000,0.194700],[3.9000,0.190500],[4.0000,0.186600],[4.2000,0.179400],[4.4000,0.173000],[4.6000,0.167300],[4.8000,0.162100],[5.0000,0.157400]],
+  G7: [[0.0000,0.119800],[0.0500,0.119700],[0.1000,0.119600],[0.1500,0.119400],[0.2000,0.119300],[0.2500,0.119400],[0.3000,0.119400],[0.3500,0.119400],[0.4000,0.119300],[0.4500,0.119300],[0.5000,0.119400],[0.5500,0.119300],[0.6000,0.119400],[0.6500,0.119700],[0.7000,0.120200],[0.7250,0.120700],[0.7500,0.121500],[0.7750,0.122600],[0.8000,0.124200],[0.8250,0.126600],[0.8500,0.130600],[0.8750,0.136800],[0.9000,0.146400],[0.9250,0.166000],[0.9500,0.205400],[0.9750,0.299300],[1.0000,0.380300],[1.0250,0.401500],[1.0500,0.404300],[1.0750,0.403400],[1.1000,0.401400],[1.1250,0.398700],[1.1500,0.395500],[1.2000,0.388400],[1.2500,0.381000],[1.3000,0.373200],[1.3500,0.365700],[1.4000,0.358000],[1.5000,0.344000],[1.5500,0.337600],[1.6000,0.331500],[1.6500,0.326000],[1.7000,0.320900],[1.7500,0.316000],[1.8000,0.311700],[1.8500,0.307800],[1.9000,0.304200],[1.9500,0.301000],[2.0000,0.298000],[2.0500,0.295100],[2.1000,0.292200],[2.1500,0.289200],[2.2000,0.286400],[2.2500,0.283500],[2.3000,0.280700],[2.3500,0.277900],[2.4000,0.275200],[2.4500,0.272500],[2.5000,0.269700],[2.5500,0.267000],[2.6000,0.264300],[2.6500,0.261500],[2.7000,0.258800],[2.7500,0.256100],[2.8000,0.253300],[2.8500,0.250600],[2.9000,0.247900],[2.9500,0.245100],[3.0000,0.242400],[3.1000,0.236800],[3.2000,0.231300],[3.3000,0.225800],[3.4000,0.220500],[3.5000,0.215400],[3.6000,0.210600],[3.7000,0.206000],[3.8000,0.201700],[3.9000,0.197500]],
+  G8: [[0.0000,0.210500],[0.0500,0.210500],[0.1000,0.210400],[0.1500,0.210400],[0.2000,0.210300],[0.2500,0.210300],[0.3000,0.210300],[0.3500,0.210300],[0.4000,0.210300],[0.4500,0.210200],[0.5000,0.210200],[0.5500,0.210200],[0.6000,0.210200],[0.6500,0.210200],[0.7000,0.210300],[0.7500,0.210300],[0.8000,0.210400],[0.8250,0.210400],[0.8500,0.210500],[0.8750,0.210600],[0.9000,0.210900],[0.9250,0.218300],[0.9500,0.257100],[0.9750,0.335800],[1.0000,0.406800],[1.0250,0.437800],[1.0500,0.447600],[1.0750,0.449300],[1.1000,0.447700],[1.1250,0.445000],[1.1500,0.441900],[1.2000,0.435300],[1.2500,0.428300],[1.3000,0.420800],[1.3500,0.413300],[1.4000,0.405900],[1.4500,0.398600],[1.5000,0.391500],[1.5500,0.384500],[1.6000,0.377700],[1.6500,0.371000],[1.7000,0.364500],[1.7500,0.358100],[1.8000,0.351900],[1.8500,0.345800],[1.9000,0.340000],[1.9500,0.334300],[2.0000,0.328800],[2.0500,0.323400],[2.1000,0.318200],[2.1500,0.313100],[2.2000,0.308100],[2.2500,0.303200],[2.3000,0.298300],[2.3500,0.293700],[2.4000,0.289100],[2.4500,0.284500],[2.5000,0.280200],[2.6000,0.272000],[2.7000,0.264200],[2.8000,0.256900],[2.9000,0.249900],[3.0000,0.243200],[3.1000,0.236800],[3.2000,0.230800],[3.3000,0.225100],[3.4000,0.219700],[3.5000,0.214700],[3.6000,0.210100],[3.7000,0.205800],[3.8000,0.201900],[3.9000,0.198300],[4.0000,0.195000],[4.2000,0.189000],[4.4000,0.183700],[4.6000,0.179100],[4.8000,0.175000],[5.0000,0.171300]],
 };
 
-const LS_KEY = "rika-calculator-profiles";
-const LITZ_EXP = 1.83;
+// ===================================================================
+// Constants (matching libGuiLesnik2_pro.so .rodata)
+// ===================================================================
+const G_CONST = 9.80665;          // gravity, m/s²
+const OMEGA_EARTH = 7.292115e-5;  // Earth rotation rate, rad/s
+const RHO_STD = 1.225;             // ICAO sea-level air density, kg/m³
+const R_DRY = 287.058;             // dry air gas constant, J/(kg·K)
+const R_VAP = 461.495;             // water vapor gas constant, J/(kg·K)
+const KELVIN_OFFSET = 273.15;
+const LITZ_EXP = 1.83;             // from DAT_001decf8
 
-const FIELD_RANGES = {
-  BC:          { min: 0.05, max: 2.0,  label: "BC" },
-  muzzleV:     { min: 100,  max: 1500, label: "MV" },
-  mass_gr:     { min: 20,   max: 900,  label: "Масса (gr)" },
-  diameter_mm: { min: 4,    max: 15,   label: "Диаметр (мм)" },
-  length_mm:   { min: 10,   max: 60,   label: "Длина (мм)" },
-  twist:       { min: 5,    max: 20,   label: "Твист (дюйм)" },
-};
+// BC conversion: 1 lb/in² = 703.07 kg/m²
+// Drag deceleration formula coefficient: π / (8 · 703.07) ≈ 1789.34
+const BC_DRAG_FACTOR = 1789.34;
 
-const DRAG_MODELS = ["G1","G2","G5","G6","G7","G8"];
+// ===================================================================
+// Atmospheric model (ports ZS_TrajectoryCalculateDensity et al.)
+// ===================================================================
+function satVaporPressure(T_C) {
+    // Magnus / Tetens formula, Pa
+    return 610.78 * Math.exp(17.27 * T_C / (T_C + 237.3));
+}
 
-function loadProfiles() {
-  try {
-    const saved = localStorage.getItem(LS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (typeof parsed === "object" && parsed !== null && Object.keys(parsed).length > 0) return parsed;
+function airDensity(T_C, P_Pa, RH_pct) {
+    const T_K = T_C + KELVIN_OFFSET;
+    const Pv = satVaporPressure(T_C) * (RH_pct / 100);
+    const Pd = P_Pa - Pv;
+    return Pd / (R_DRY * T_K) + Pv / (R_VAP * T_K);
+}
+
+function soundVelocity(T_C) {
+    // c = 331 · √(T_K / 273) — exact form from ZS_TrajectoryCalculateSoundVelocity
+    return 331.0 * Math.sqrt((T_C + KELVIN_OFFSET) / 273);
+}
+
+// ===================================================================
+// Drag lookup (binary search + linear interp) — ports ZS_TrajectoryFindNode + ZS_TrajectoryCalculateDrag
+// ===================================================================
+function dragCoefficient(mach, table) {
+    if (mach <= table[0][0]) return table[0][1];
+    if (mach >= table[table.length-1][0]) return table[table.length-1][1];
+    let lo = 0, hi = table.length - 1;
+    while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (table[mid][0] <= mach) lo = mid; else hi = mid;
     }
-  } catch (e) { console.warn("Не удалось прочитать профили:", e); }
-  return JSON.parse(JSON.stringify(DEFAULT_PROFILES));
+    const [m0, c0] = table[lo], [m1, c1] = table[hi];
+    return c0 + (c1 - c0) * (mach - m0) / (m1 - m0);
 }
 
-function persistSavedProfiles() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(savedProfiles)); }
-  catch (e) { console.warn("Не удалось сохранить профили:", e); }
+// Dynamic BC factor (piecewise from ZS_TrajectoryBallisticCoefficientDynamicFactor)
+// Simplified: returns 1.0 outside transonic, slightly < 1 near transonic
+function dynamicBCFactor(mach, dragModel) {
+    if (mach > 2.5) return 1.0;
+    if (mach > 1.2) {
+        const t = (2.5 - mach) / 1.3;
+        return 1.0 - 0.05 * t;  // small correction
+    }
+    if (mach > 0.9) {
+        // transonic dip — BC drops
+        return 0.85 - 0.1 * (1.2 - mach) / 0.3;
+    }
+    return 0.95;
 }
 
-// === Two-tier state: savedProfiles (committed) + draftProfiles (in-progress) ===
-let savedProfiles = loadProfiles();
-let draftProfiles = clone(savedProfiles);
-
-function clone(o) { return JSON.parse(JSON.stringify(o)); }
-
-function isDirty() {
-  return JSON.stringify(savedProfiles) !== JSON.stringify(draftProfiles);
+// ===================================================================
+// Miller stability (ports ZS_TrajectoryCalculateStabilityCoefficient)
+// ===================================================================
+function millerStability(mass_gr, diameter_mm, length_mm, twist_in, muzzleV_mps, T_C, P_Pa) {
+    const d_in = diameter_mm / 25.4;
+    const L_in = length_mm / 25.4;
+    const L_cal = L_in / d_in;
+    const t_cal = twist_in / d_in;
+    const muzzleV_fps = muzzleV_mps / 0.3048;
+    const v_factor = Math.cbrt(muzzleV_fps / 2800);
+    const T_F = T_C * 9 / 5 + 32;
+    const P_inHg = P_Pa / 3386.39;
+    const atmo_factor = ((T_F + 460) / 519) * (29.92 / P_inHg);
+    const base = 30 * mass_gr / (t_cal * t_cal * Math.pow(d_in, 3) * L_cal * (1 + L_cal * L_cal));
+    return base * v_factor * atmo_factor;
 }
 
-function profileDirty(id) {
-  if (!savedProfiles[id]) return true;          // new
-  if (!draftProfiles[id]) return true;          // deleted in draft
-  return JSON.stringify(savedProfiles[id]) !== JSON.stringify(draftProfiles[id]);
+// ===================================================================
+// Wind decomposition (clock face: 12 = wind from front/head, 6 = tail, 3 = right, 9 = left)
+// Returns wind velocity vector in shooter frame (+x downrange, +y up, +z right).
+// v_relative = v_bullet − v_wind  → use this in drag.
+// ===================================================================
+function windVector(windV, clockDir) {
+    // Wind blows TO direction = clock + 6 hours (mod 12). +x is 12 o'clock.
+    // 12 → blows TO 6 → -x (headwind);  6 → +x (tail);  3 → -z (push left);  9 → +z (push right)
+    const toAngleClockwiseFromX = ((clockDir + 6) % 12) * 30 * Math.PI / 180;
+    return {
+        x: windV * Math.cos(toAngleClockwiseFromX),
+        y: 0,
+        z: windV * Math.sin(toAngleClockwiseFromX),
+    };
 }
 
-// =============================================================================
-// Validation
-// =============================================================================
-function validateProfile(p) {
-  const errs = [];
-  if (!p.name || typeof p.name !== "string" || p.name.trim() === "") errs.push("имя пустое");
-  if (!DRAG_MODELS.includes(p.dragModel)) errs.push("drag model");
-  for (const [key, { min, max, label }] of Object.entries(FIELD_RANGES)) {
-    const v = p[key];
-    if (typeof v !== "number" || !isFinite(v)) errs.push(`${label}: пусто/не число`);
-    else if (v < min || v > max) errs.push(`${label}: ${v} вне диапазона [${min}..${max}]`);
+// ===================================================================
+// Coriolis helpers (port of coriolis_omega_enu, basis_from_azimuth, cross3)
+// ===================================================================
+function omegaENU(latitudeDeg) {
+    const lat = latitudeDeg * Math.PI / 180;
+    return { x: 0, y: Math.cos(lat) * OMEGA_EARTH, z: Math.sin(lat) * OMEGA_EARTH };
+    // x=East, y=North, z=Up
+}
+
+function shooterToENU(v, azimuthDeg) {
+    // v is in shooter frame (x=forward, y=up, z=right)
+    // azimuth = bearing of shooter forward from North, clockwise
+    // ENU: x=East, y=North, z=Up
+    // forward-ENU = (sin(az), cos(az), 0) [unit east+north]
+    // right-ENU   = (cos(az), -sin(az), 0)
+    // up-ENU      = (0, 0, 1)
+    const az = azimuthDeg * Math.PI / 180;
+    const sx = Math.sin(az), cx = Math.cos(az);
+    return {
+        x: v.x * sx + v.z * cx,
+        y: v.x * cx - v.z * sx,
+        z: v.y
+    };
+}
+
+function enuToShooter(v, azimuthDeg) {
+    const az = azimuthDeg * Math.PI / 180;
+    const sx = Math.sin(az), cx = Math.cos(az);
+    return {
+        x: v.x * sx + v.y * cx,   // forward = east·sin + north·cos
+        y: v.z,                    // up
+        z: v.x * cx - v.y * sx,    // right = east·cos − north·sin
+    };
+}
+
+function cross3(a, b) {
+    return {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x,
+    };
+}
+
+// ===================================================================
+// Newton-method zeroing solver (port of ZS_trajectoryCalculateSightAngle)
+// Iterates launch angle until bullet crosses line-of-sight at zeroDist.
+// ===================================================================
+function solveZeroAngle(p) {
+    let angle = 2.5 * Math.PI / 180;  // start: 2.5° (from firmware)
+    const maxIter = 100;
+    const tol = 1e-4;  // meters
+    for (let i = 0; i < maxIter; i++) {
+        const drop = simpleDropAt(p, angle, p.zeroDist);
+        const dropPlus = simpleDropAt(p, angle + 0.001, p.zeroDist);
+        const derivative = (dropPlus - drop) / 0.001;
+        const delta = -drop / derivative;
+        angle += delta;
+        if (Math.abs(drop) < tol) return angle;
+        if (Math.abs(angle) > 0.5) return angle;  // safety bound: angle > 30° → diverged
+    }
+    return angle;
+}
+
+// Simplified single-shot: launch angle + return vertical drop at given range
+// (no Coriolis, no spin drift in zeroing — those are real-fire-only)
+function simpleDropAt(p, launchAngle, targetX) {
+    let x = 0, y = -p.sightHeight / 1000;  // start at bore axis (sight above bore by sightHeight)
+    let vx = p.muzzleV * Math.cos(launchAngle);
+    let vy = p.muzzleV * Math.sin(launchAngle);
+    let vz = 0;
+    let t = 0;
+    const dt_target = 0.001;  // 1 ms time step
+    const maxSteps = 100000;
+    for (let i = 0; i < maxSteps; i++) {
+        if (x >= targetX) break;
+        if (vx <= 0) return -10;  // ballistic stalled
+        // Adaptive dt to land near target
+        let dt = dt_target;
+        if ((x + vx * dt) > targetX) dt = (targetX - x) / vx;
+
+        const vrx = vx - p.windX, vry = vy - p.windY, vrz = vz - p.windZ;
+        const speed = Math.sqrt(vrx*vrx + vry*vry + vrz*vrz);
+        const mach = speed / p.cSound;
+        let Cd = dragCoefficient(mach, p.dragTable);
+        if (p.useDynamicBC) Cd *= dynamicBCFactor(mach, p.dragModelName);
+        const k = (p.rho / RHO_STD) * Cd * speed / (BC_DRAG_FACTOR * p.BC);
+        vx -= vrx * k * dt;
+        vy -= vry * k * dt + G_CONST * dt;
+        vz -= vrz * k * dt;
+        x += vx * dt;
+        y += vy * dt;
+        t += dt;
+    }
+    return y;  // y at targetX, relative to line of sight
+}
+
+// ===================================================================
+// Full trajectory run (port of ZS_TrajectoryCalculate)
+// Returns: array of points + final summary
+// ===================================================================
+function runTrajectory(p) {
+    const samples = [];
+    let x = 0, y = -p.sightHeight / 1000, z = 0;  // bore axis below sight by sightHeight
+    let vx = p.muzzleV * Math.cos(p.launchAngle);
+    let vy = p.muzzleV * Math.sin(p.launchAngle);
+    let vz = 0;
+    let t = 0;
+    const dt = 0.001; // 1 ms
+    const maxSteps = 100000;
+
+    // Coriolis accumulators (shooter-frame position offset, added on top of base trajectory)
+    let cor_vx = 0, cor_vy = 0, cor_vz = 0;
+    let cor_x = 0, cor_y = 0, cor_z = 0;
+    const omega = omegaENU(p.latitude);
+
+    const sampleInterval = Math.max(p.targetDist / 200, 1); // ~200 samples on chart
+    let nextSampleX = 0;
+
+    for (let i = 0; i < maxSteps; i++) {
+        if (x >= p.targetDist) break;
+        if (vx <= 0) break;
+
+        const vrx = vx - p.windX, vry = vy - p.windY, vrz = vz - p.windZ;
+        const speed = Math.sqrt(vrx*vrx + vry*vry + vrz*vrz);
+        const mach = speed / p.cSound;
+        let Cd = dragCoefficient(mach, p.dragTable);
+        if (p.useDynamicBC) Cd *= dynamicBCFactor(mach, p.dragModelName);
+        const k = (p.rho / RHO_STD) * Cd * speed / (BC_DRAG_FACTOR * p.BC);
+
+        vx -= vrx * k * dt;
+        vy -= vry * k * dt + G_CONST * dt;
+        vz -= vrz * k * dt;
+        x += vx * dt;
+        y += vy * dt;
+        z += vz * dt;
+        t += dt;
+
+        // Coriolis: a_cor = -2·(ω_ENU × v_ENU), integrated in shooter frame
+        if (p.useCoriolis) {
+            const vENU = shooterToENU({ x: vx, y: vy, z: vz }, p.azimuth);
+            const aENU = cross3(omega, vENU);
+            const aShooter = enuToShooter({ x: -2*aENU.x, y: -2*aENU.y, z: -2*aENU.z }, p.azimuth);
+            cor_vx += aShooter.x * dt;
+            cor_vy += aShooter.y * dt;
+            cor_vz += aShooter.z * dt;
+            cor_x += cor_vx * dt;
+            cor_y += cor_vy * dt;
+            cor_z += cor_vz * dt;
+        }
+
+        if (x >= nextSampleX || x >= p.targetDist) {
+            samples.push({
+                x,
+                y: y + cor_y,                  // vertical (gravity + drag) + Coriolis vertical component
+                z: z + cor_z,                  // lateral (wind drift) + Coriolis horizontal component
+                v: Math.sqrt(vx*vx + vy*vy + vz*vz),
+                t,
+                vx, vy, vz,
+                base_y: y, base_z: z,
+                cor_y, cor_z,
+            });
+            nextSampleX += sampleInterval;
+        }
+    }
+
+    // Final state
+    const fin = samples.length ? samples[samples.length-1] : { x, y, t, v: Math.sqrt(vx*vx+vy*vy+vz*vz), vx, vy, vz };
+
+    // Spin drift (Litz) — applied to lateral displacement
+    let driftM = 0;
+    if (p.useSpinDrift && p.SG > 0) {
+        const sign = (p.riflingDir === 1) ? -1 : 1;
+        const driftIn = sign * (p.SG + 1.2) * 1.25 * Math.pow(fin.t, LITZ_EXP);
+        driftM = driftIn * 0.0254;
+    }
+
+    fin.z_with_drift = fin.z + driftM;
+    fin.coriolisZ = p.useCoriolis ? cor_z : 0;
+    fin.coriolisY = p.useCoriolis ? cor_y : 0;
+    fin.driftZ = driftM;
+
+    return { samples, final: fin };
+}
+
+// ===================================================================
+// Lesnik-strict mode (byte-faithful port — separate file injected below)
+// ===================================================================
+// ============================================================================
+// Lesnik-strict port: byte-faithful реализация ZS_TrajectoryCalculate
+// и связанных функций из libGuiLesnik2_pro.so.
+//
+// Все константы df_* — извлечены из .data секции бинарника по адресам
+// (file_offset = virtual_address - 0x1000). Имена функций соответствуют
+// декомпилированным символам Ghidra.
+// ============================================================================
+
+const LSC = {
+  // Извлечены из libGuiLesnik2_pro.so .data
+  df_MaximumCalculationStepSize: 10.0,            // m
+  df_MaximumDrop:                3048.0,          // m (= 10000 ft)
+  df_MinimumVelocity:            15.24,           // m/s (= 50 fps)
+  df_PIR:                        0.000208551,     // aerodynamic factor π·d²·…
+  df_StandartDensity1:           1.224998769,     // kg/m³ — ICAO sea-level
+  df_TEMPERATURE_LAPSE:         -0.0065,          // K/m (negative)
+  df_GAS_CONSTANT:               8.31432,         // J/(mol·K)
+  df_G_CONSTANT:                 9.80665,         // m/s²
+  df_AIR_MOLAR_MASS:             0.0289644,       // kg/mol
+  df_DRY_AIR_K:                  287.058,         // J/(kg·K)
+  df_VAPOR_K:                    461.495,         // J/(kg·K)
+  // Wobus polynomial for saturated vapor pressure (T °C → hPa)
+  df_ES0:    6.1078,
+  df_SVP_C0: 0.99999683,
+  df_SVP_C1: -0.0090826951,
+  df_SVP_C2: 7.8736169e-05,
+  df_SVP_C3: -6.1117958e-07,
+  df_SVP_C4: 4.3884187e-09,
+  df_SVP_C5: -2.9883885e-11,
+  df_SVP_C6: 2.1874425e-13,
+  // Generic
+  PI:                            3.141592653589793,
+  OMEGA_EARTH:                   7.292115e-05,
+  KELVIN_C_OFFSET:               273.15,
+  LITZ_EXP:                      1.83,
+};
+
+// ============================================================================
+// ZS_TrajectorySaturatedVapourPressure — Wobus formula (T_C → hPa)
+// ============================================================================
+function lesnik_SaturatedVapourPressure(T_C) {
+  // (((((C6·x + C5)·x + C4)·x + C3)·x + C2)·x + C1)·x + C0   — Horner
+  let p = LSC.df_SVP_C6;
+  p = p * T_C + LSC.df_SVP_C5;
+  p = p * T_C + LSC.df_SVP_C4;
+  p = p * T_C + LSC.df_SVP_C3;
+  p = p * T_C + LSC.df_SVP_C2;
+  p = p * T_C + LSC.df_SVP_C1;
+  p = p * T_C + LSC.df_SVP_C0;
+  return LSC.df_ES0 / Math.pow(p, 8.0);
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculateDensity(T_K, P_Pa, RH_fraction) → kg/m³
+// ============================================================================
+function lesnik_CalculateDensity(T_K, P_Pa, RH_frac) {
+  // P_vap_hPa = SatVap(T_C) * RH_frac
+  // → multiply by 100 to get Pa
+  const T_C = T_K - LSC.KELVIN_C_OFFSET;
+  let Pvap = lesnik_SaturatedVapourPressure(T_C);
+  Pvap = RH_frac * Pvap * 100.0;
+  return (P_Pa - Pvap) / (LSC.df_DRY_AIR_K * T_K)
+       + Pvap / (LSC.df_VAPOR_K * T_K);
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculateSoundVelocity(T_K) → m/s
+// ============================================================================
+function lesnik_CalculateSoundVelocity(T_K) {
+  return Math.sqrt(T_K / 273.0) * 331.0;
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculatePressure(P0_Pa, T0_K, h0_m, h_m) → Pa
+// ============================================================================
+function lesnik_CalculatePressure(P0, T0, h0, h) {
+  const base = (LSC.df_TEMPERATURE_LAPSE / T0) * (h - h0) + 1.0;
+  const exp = (-LSC.df_G_CONSTANT * LSC.df_AIR_MOLAR_MASS)
+            / (LSC.df_GAS_CONSTANT * LSC.df_TEMPERATURE_LAPSE);
+  return Math.pow(base, exp) * P0;
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculateTemperature(T0_K, h0_m, h_m) → K
+// ============================================================================
+function lesnik_CalculateTemperature(T0, h0, h) {
+  return (h - h0) * LSC.df_TEMPERATURE_LAPSE + T0;
+}
+
+// ============================================================================
+// ZS_TrajectoryAtAltitude(h, atmo, &dRatio, &cSound)
+//   atmo[0] = h0 (m), atmo[1] = P0 (Pa), atmo[2] = T0 (°C), atmo[3] = RH (fraction)
+// ============================================================================
+function lesnik_AtAltitude(h, atmo) {
+  const T0_K = atmo[2] + LSC.KELVIN_C_OFFSET;
+  const T = lesnik_CalculateTemperature(T0_K, atmo[0], h);
+  const P = lesnik_CalculatePressure(atmo[1], T0_K, atmo[0], h);
+  const rho = lesnik_CalculateDensity(T, P, atmo[3]);
+  return {
+    densityRatio: rho / LSC.df_StandartDensity1,
+    soundVelocity: lesnik_CalculateSoundVelocity(T),
+    density: rho,
+    temperature: T,
+    pressure: P,
+  };
+}
+
+// ============================================================================
+// ZS_TrajectoryTravelTime — trivial
+// ============================================================================
+function lesnik_TravelTime(dx, vx) { return dx / vx; }
+
+// ============================================================================
+// ZS_TrajectoryFindNode — binary search for closest Mach in table.
+// Table format: flat array of {mach, cd, a, b, c} per node.
+// ============================================================================
+function lesnik_FindNode(mach, table) {
+  let lo = 0, hi = table.length - 1;
+  while (hi - lo > 1) {
+    const mid = Math.floor((hi + lo) / 2);
+    if (mach <= table[mid].mach) hi = mid; else lo = mid;
   }
-  return errs;
+  // Pick the closer of lo and hi
+  if (table[hi].mach - mach <= mach - table[lo].mach) return hi;
+  return lo;
 }
 
-function validateAllDraft() {
-  const out = {};
-  for (const [id, p] of Object.entries(draftProfiles)) {
-    const errs = validateProfile(p);
-    if (errs.length > 0) out[id] = errs;
+// ============================================================================
+// ZS_TrajectoryCalculateDrag(mach, node) → Cd via quadratic interp
+//   Cd = c + (b + a·M)·M = a·M² + b·M + c
+// ============================================================================
+function lesnik_CalculateDrag(mach, node) {
+  return node.c + (node.b + node.a * mach) * mach;
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculateTable — precompute (a, b, c) per node from raw (M, Cd) pairs.
+// First and last nodes get linear/constant fit; middle nodes get quadratic.
+// ============================================================================
+function lesnik_CalculateTable(rawTable /* array of [mach, cd] */) {
+  const n = rawTable.length;
+  const out = rawTable.map(([m, cd]) => ({ mach: m, cd, a: 0, b: 0, c: 0 }));
+
+  // First node: linear fit through (M[0], Cd[0]) and (M[1], Cd[1])
+  out[0].a = 0;
+  out[0].b = (out[1].cd - out[0].cd) / (out[1].mach - out[0].mach);
+  out[0].c = out[0].cd - out[0].mach * out[0].b;
+
+  // Middle nodes: quadratic through three points
+  for (let i = 1; i < n - 1; i++) {
+    const M0 = out[i - 1].mach, Cd0 = out[i - 1].cd;
+    const M1 = out[i].mach,     Cd1 = out[i].cd;
+    const M2 = out[i + 1].mach, Cd2 = out[i + 1].cd;
+    const num = (Cd2 - Cd0) * (M1 - M0) - (Cd1 - Cd0) * (M2 - M0);
+    const den = (M2*M2 - M0*M0) * (M1 - M0) - (M1*M1 - M0*M0) * (M2 - M0);
+    out[i].a = num / den;
+    out[i].b = ((Cd1 - Cd0) - out[i].a * (M1*M1 - M0*M0)) / (M1 - M0);
+    out[i].c = Cd0 - (out[i].a * M0*M0 + out[i].b * M0);
   }
+
+  // Last node: constant
+  out[n - 1].a = 0;
+  out[n - 1].b = 0;
+  out[n - 1].c = out[n - 1].cd;
+
   return out;
 }
 
-// =============================================================================
-// Main computation (API call)
-// =============================================================================
-let chart = null;
-let inFlight = false;
-let lastResult = null;       // last successful API response (for snapshot export)
-let lastInputs = null;       // last inputs submitted (for snapshot export)
+// ============================================================================
+// ZS_TrajectoryCalculateStabilityCoefficient — Miller formula с атмо-поправкой
+// param_1 (bullet): [0]=mass_g, [1]=BC, [2]=MV_mps, [3]=diameter_mm, [4]=length_mm
+// param_2[0] = pointer to rifling: rifling[0] = twist (cm — see /2.54)
+// param_3 (atmo): [0]=h0_m, [1]=P0_Pa, [2]=T0_C, [3]=RH_frac
+// ============================================================================
+function lesnik_CalculateStabilityCoefficient(bullet, riflingTwistCm, atmo) {
+  // 🐛 LESNIK-BUG-006: firmware's InitCalculateSightAngleStructDate overrides
+  // bullet[3] and bullet[4] with constants DAT_001dec98=5.6896 and DAT_001deca0=22.86
+  // (hardcoded .224 caliber, ~0.9" length). Real diameter/length from user are IGNORED.
+  // Mirror this so SG output matches firmware.
+  const HARDCODED_DIAMETER_MM = 5.6896;
+  const HARDCODED_LENGTH_MM   = 22.86;
+  const m_grain = bullet[0] * 15.4323583529;       // g → grain
+  const d_in = HARDCODED_DIAMETER_MM / 25.4;        // 🐛 BUG-006: was bullet[3]/25.4
+  const L_cal = (HARDCODED_LENGTH_MM / 25.4) / d_in;// 🐛 BUG-006: was (bullet[4]/25.4)/d_in
+  const twist_in = riflingTwistCm / 2.54;         // cm → in
+  const t_cal = twist_in / d_in;                  // twist in calibers
+  const muzzleV_fps = bullet[2] / 0.3048;
+  const v_factor = Math.cbrt(muzzleV_fps / 2800);
 
-async function compute() {
-  if (inFlight) return;
-  const errBox = document.getElementById("errorBox");
-  if (errBox) errBox.innerHTML = "";
+  let atmoFactor = 1.0;
+  if (atmo) {
+    const T_F = atmo[2] * 9.0 / 5.0 + 32.0;       // °C → °F
+    const P_inHg = atmo[1] / 3386.388666666;       // Pa → inHg
+    atmoFactor = ((T_F + 460.0) / 519.0) * (29.92 / P_inHg);
+  }
 
-  try {
-    inFlight = true;
-    showLoading(true);
+  const base = (30.0 * m_grain) /
+               (t_cal * t_cal * Math.pow(d_in, 3) * L_cal * (1.0 + L_cal * L_cal));
+  return base * v_factor * atmoFactor;
+}
 
-    lastInputs = getCurrentInputs();
-    const massG = $n("mass_gr") / 15.4324;
-    const body = {
-      mode: MODE,
-      bullet: [massG, $n("BC"), $n("muzzleV"), $n("diameter_mm"), $n("length_mm")],
-      rifling: {
-        twistCm: $n("twist") * 2.54,
-        sightHeightCm: $n("sightHeight") / 10.0,
-        dirRight: parseInt($("riflingDir")) === 0,
-      },
-      atmoZero: [0, $n("P_hPa") * 100, $n("T_C"), $n("RH") / 100],
-      shotParams: [0, 0, $n("targetDist") * 100, $n("targetDist"), 0, 0],
-      windSegments: $n("windV") > 0 ? [[0, $n("windV"), $n("windClock") * 30]] : null,
-      dragModel: $("dragModel"),
-      opts: {
-        useCoriolis: $c("useCoriolis"),
-        useDrift: $c("useSpinDrift"),
-        useDynamicBC: $c("useDynamicBC"),
-        latitudeDeg: $n("latitude"),
-        shootingAzimuthDeg: $n("azimuth"),
-      },
-      zeroDist: $n("zeroDist"),
-    };
+// ============================================================================
+// Coriolis helpers (verbatim from libGuiLesnik2_pro.so)
+// ============================================================================
+function coriolis_omega_enu(latitudeDeg) {
+  const lat = (latitudeDeg * LSC.PI) / 180.0;
+  return [0.0, Math.cos(lat) * LSC.OMEGA_EARTH, Math.sin(lat) * LSC.OMEGA_EARTH];
+}
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`HTTP ${res.status}: ${txt}`);
+function coriolis_basis_from_azimuth_deg(azDeg) {
+  const az = (azDeg * LSC.PI) / 180.0;
+  const s = Math.sin(az), c = Math.cos(az);
+  // e_fwd = (sin, cos, 0), e_right = (cos, -sin, 0), e_up = (0, 0, 1)
+  return {
+    e_fwd:   [s, c, 0],
+    e_right: [c, -s, 0],
+    e_up:    [0, 0, 1],
+  };
+}
+
+function coriolis_cross3(a, b) {
+  return [
+    a[1]*b[2] - a[2]*b[1],
+    a[2]*b[0] - a[0]*b[2],
+    a[0]*b[1] - a[1]*b[0],
+  ];
+}
+
+function coriolis_dot3(a, b) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+// ============================================================================
+// ZS_TrajectoryGetCalculationStep — adaptive step from max range
+// ============================================================================
+function lesnik_GetCalculationStep(maxRangeOrSimilar) {
+  let step = maxRangeOrSimilar / 2.0;
+  if (LSC.df_MaximumCalculationStepSize < step) {
+    const a = Math.floor(Math.log10(step));
+    const b = Math.floor(Math.log10(LSC.df_MaximumCalculationStepSize));  // log10(10) = 1, floor = 1
+    const div = Math.pow(10, a - b + 1);
+    step = step / div;
+  }
+  return step;
+}
+
+// ============================================================================
+// ZS_TrajectoryWindVector — decompose wind into per-segment 3D vector
+// param_4 layout: param_4[0] = pitch (deg), param_4[5] = launch_yaw_offset (deg)
+// param_5 (wind segment) = [dist_bound, V, D_deg]
+// Output: out[0..2] = (vx, vy, vz) wind components in shooter frame
+// ============================================================================
+function lesnik_WindVector(shotParams, windSeg) {
+  // From decompile (ZS_TrajectoryWindVector):
+  //   c1 = cos(pitch),  s1 = sin(pitch)
+  //   c2 = cos(param_4[5]),  s2 = sin(param_4[5])
+  //   if (windSeg) {
+  //     wx_h = V·cos(D)   (along wind direction angle D)
+  //     wz_h = V·sin(D)
+  //   } else: wx_h=0, wz_h=0
+  //   out[0] = wx_h · c1
+  //   out[1] = -s1·wx_h·c2 + wz_h·s2
+  //   out[2] = wz_h·c2 - (-s1·wx_h)·s2
+  const pitch = (shotParams[0] * LSC.PI) / 180.0;
+  const yaw   = (shotParams[5] * LSC.PI) / 180.0;
+  const c1 = Math.cos(pitch), s1 = Math.sin(pitch);
+  const c2 = Math.cos(yaw),   s2 = Math.sin(yaw);
+  let wx_h = 0, wz_h = 0;
+  if (windSeg) {
+    const Drad = (windSeg[2] * LSC.PI) / 180.0;
+    wx_h = windSeg[1] * Math.cos(Drad);
+    wz_h = windSeg[1] * Math.sin(Drad);
+  }
+  return [
+    wx_h * c1,
+    -s1 * wx_h * c2 + wz_h * s2,
+    wz_h * c2 + s1 * wx_h * s2,
+  ];
+}
+
+// ============================================================================
+// ZS_TrajectoryCalculate — main integrator (port of 3660-byte function)
+//
+// bullet  : [mass_g, BC, MV_mps, diameter_mm, length_mm]
+// rifling : { twist_cm, dirRight: bool }   (consumed via st_rifling)
+// atmoZero: [h0_m, P0_Pa, T0_C, RH_frac]
+// shotParams: [pitch_deg, pitchCorr_deg, paramForStep_cm, targetDist_m, launchAzim_deg, yawOffset_deg, ...]
+// windSegments: [[dist_bound, V_mps, D_deg], ...]   may be empty/null
+// table   : drag table (output of lesnik_CalculateTable)
+// opts    : { useCoriolis, useDrift, useDynamicBC, latitudeDeg, shootingAzimuthDeg, SG }
+// ============================================================================
+function lesnik_Calculate(bullet, rifling, atmoZero, shotParams, windSegments, table, opts) {
+  const out = { samples: [], final: null };
+
+  const BC = bullet[1];
+  const PIR = LSC.df_PIR;
+  // Drag формула прошивки. Asm 0x69d10-0x69d54: df_PIR × DAT_001decc0 (3.2808399).
+  // LESNIK-BUG-009 был RETRACTED 2026-05-23 — формула корректна:
+  // df_PIR × M_TO_FT = 0.000684 ≈ McCoy K × ρ_std = 0.000559 × 1.225 = 0.000684775
+  // (отличие 0.08%). Предыдущий "empirical disproof" сравнивал G7 BC=0.218
+  // с G1 BC=0.475 из Sierra catalog — разные нормализации, ложное "38% off".
+  // Подтверждение: reference-solver.js + Gemini blind audit v2.
+  const M_TO_FT = 3.2808399;  // = DAT_001decc0
+  const k_const = (1.0 / BC) * PIR * M_TO_FT;
+  // → drag accel = (rho_ratio) * k_const * Cd * speed * v_rel
+
+  // Step (in cm internally per decomp; we keep things in meters here)
+  // Note: firmware passes param_4[2] in cm. We accept it the same way.
+  const stepCm = lesnik_GetCalculationStep(shotParams[2]);
+  const stepM = stepCm / 100.0;
+
+  // Initial velocity from pitch & launch yaw
+  const pitchRad = (shotParams[0] * LSC.PI) / 180.0;
+  const pitchAdj = shotParams[1] !== 0 ? shotParams[1] : 0;
+  const pitchTotal = ((shotParams[0] + pitchAdj) * LSC.PI) / 180.0;
+  const yawRad = ((shotParams[4] || 0) * LSC.PI) / 180.0;
+
+  const MV = bullet[2];
+  let vx = Math.cos(pitchTotal) * MV * Math.cos(yawRad);
+  let vy = Math.sin(pitchTotal) * MV;
+  let vz = Math.cos(pitchTotal) * MV * Math.sin(yawRad);
+
+  // Initial position
+  // local_f8 = 0 (downrange), local_f0 = -sight_height/100 (vertical, below LoS),
+  // local_e8 = 0 (lateral). Sight height is stored in cm.
+  let x = 0;
+  let y = -(rifling.sightHeightCm) / 100.0;
+  let z = 0;
+  let totalT = 0;
+
+  const targetX = shotParams[3];
+
+  // Wind init
+  let windSegIdx = 0;
+  let nextWindBound = 1e7;
+  let curWind = [0, 0, 0];
+  if (windSegments && windSegments.length > 0) {
+    if (windSegments.length > 1 && windSegments[0][0] !== 0) {
+      nextWindBound = windSegments[0][0];
     }
-    const data = await res.json();
-    lastResult = data;
-    renderResult(data);
-  } catch (e) {
-    if (errBox) errBox.innerHTML = `<div class="error">Ошибка: ${e.message}</div>`;
-    console.error(e);
-  } finally {
-    inFlight = false;
-    showLoading(false);
+    curWind = lesnik_WindVector(shotParams, windSegments[0]);
   }
+
+  // Atmospheric state — refreshed every ~1.0 m of altitude change
+  let lastAtmoY = -1e6;
+  let dRatio = 1.0;
+  let cSound = 340.0;
+
+  // Coriolis init
+  const omega = opts.useCoriolis ? coriolis_omega_enu(opts.latitudeDeg) : [0,0,0];
+  const basis = opts.useCoriolis ? coriolis_basis_from_azimuth_deg(opts.shootingAzimuthDeg) : null;
+  let corV = [0, 0, 0];
+  let corP = [0, 0, 0];
+
+  // Sampling for chart
+  const sampleStride = Math.max(targetX / 200, 0.5);
+  let nextSampleX = 0;
+
+  const maxIter = 1000000;
+  // Firmware uses outer exit `local_198 < local_f8` where local_198 = targetX + step_m,
+  // so the loop runs ONE step past target. Mirror that here (LESNIK-BUG-002).
+  const exitThreshold = targetX + stepM;
+  for (let iter = 0; iter < maxIter; iter++) {
+    if (x > exitThreshold) break;
+    if (vx <= 0) break;
+
+    // Refresh atmosphere on altitude change
+    if (Math.abs(lastAtmoY - y) > 1.0) {
+      const atm = lesnik_AtAltitude(y, atmoZero);
+      dRatio = atm.densityRatio;
+      cSound = atm.soundVelocity;
+      lastAtmoY = y;
+    }
+
+    // Speed limit / max drop exits
+    const speed_now = Math.sqrt(vx*vx + vy*vy + vz*vz);
+    if (speed_now < LSC.df_MinimumVelocity) break;
+    if (-y > LSC.df_MaximumDrop) break;
+
+    // Wind segment switch
+    if (windSegments && nextWindBound <= x) {
+      windSegIdx += 1;
+      if (windSegIdx < windSegments.length && windSegments[windSegIdx][0] !== 0) {
+        nextWindBound = windSegments[windSegIdx][0];
+        curWind = lesnik_WindVector(shotParams, windSegments[windSegIdx]);
+      } else {
+        nextWindBound = 1e7;
+      }
+    }
+
+    // dt from step
+    const dt = lesnik_TravelTime(stepM, vx);
+
+    const vrx = vx - curWind[0];
+    const vry = vy - curWind[1];
+    const vrz = vz - curWind[2];
+    const speed_rel = Math.sqrt(vrx*vrx + vry*vry + vrz*vrz);
+    const mach = speed_rel / cSound;
+
+    const nodeIdx = lesnik_FindNode(mach, table);
+    let Cd = lesnik_CalculateDrag(mach, table[nodeIdx]);
+    if (opts.useDynamicBC) {
+      const factor = lesnik_BCDynamicFactor(mach, opts.dragModel);
+      Cd = Cd / factor;
+    }
+
+    const drag = dRatio * k_const * Cd * speed_rel;
+    vx -= dt * drag * vrx;
+    vy -= dt * (drag * vry + LSC.df_G_CONSTANT);
+    vz -= dt * drag * vrz;
+    x += vx * dt;
+    y += vy * dt;
+    z += vz * dt;
+    totalT += dt;
+
+    // Coriolis: a_cor = -2·(ω_ENU × v_ENU)
+    if (opts.useCoriolis) {
+      // Transform v (shooter frame) → ENU using basis
+      const v_enu = [
+        vx * basis.e_fwd[0] + vz * basis.e_right[0],
+        vx * basis.e_fwd[1] + vz * basis.e_right[1],
+        vy,
+      ];
+      const cross = coriolis_cross3(omega, v_enu);
+      const a_enu = [-2 * cross[0], -2 * cross[1], -2 * cross[2]];
+      // Back to shooter: project a_enu onto basis vectors
+      const a_shoot = [
+        a_enu[0] * basis.e_fwd[0] + a_enu[1] * basis.e_fwd[1],   // forward
+        a_enu[2],                                                  // up
+        a_enu[0] * basis.e_right[0] + a_enu[1] * basis.e_right[1], // right
+      ];
+      corV[0] += a_shoot[0] * dt;
+      corV[1] += a_shoot[1] * dt;
+      corV[2] += a_shoot[2] * dt;
+      corP[0] += corV[0] * dt;
+      corP[1] += corV[1] * dt;
+      corP[2] += corV[2] * dt;
+    }
+
+    if (x >= nextSampleX || x >= targetX) {
+      out.samples.push({
+        x,
+        y: y + corP[1],
+        z: z + corP[2],
+        v: Math.sqrt(vx*vx + vy*vy + vz*vz),
+        t: totalT,
+        vx, vy, vz,
+        cor_y: corP[1], cor_z: corP[2],
+      });
+      nextSampleX += sampleStride;
+    }
+  }
+
+  // Final state
+  const last = out.samples.length ? out.samples[out.samples.length - 1] : {
+    x, y, z, v: Math.sqrt(vx*vx + vy*vy + vz*vz), t: totalT, vx, vy, vz, cor_y: corP[1], cor_z: corP[2]
+  };
+
+  // Spin drift (Litz) — FIRMWARE-MIRROR mode.
+  // ⚠️ OEM firmware divides by 254.0 instead of multiplying by 0.0254 (LESNIK-BUG-001).
+  // This understates spin drift by factor 254 × 0.0254 = 6.4516.
+  // For .308 168gr SMK on 1000 yd: real ~19 cm, firmware predicts ~3 cm.
+  // We MIRROR the bug here so calculator output matches what the real device shows.
+  // The corrected formula lives in calculator-corrected.html.
+  let driftM = 0;
+  if (opts.useDrift && opts.SG > 0) {
+    const sign = rifling.dirRight ? 1 : -1;
+    const driftNumerator = sign * (opts.SG + 1.2) * 1.25 * Math.pow(last.t, LSC.LITZ_EXP);
+    driftM = driftNumerator / 254.0;  // 🐛 LESNIK-BUG-001 — should be × 0.0254
+  }
+
+  last.driftZ = driftM;
+  last.coriolisZ = opts.useCoriolis ? corP[2] : 0;
+  last.coriolisY = opts.useCoriolis ? corP[1] : 0;
+
+  out.final = last;
+  return out;
 }
 
-function renderResult(data) {
-  const fin = data.final;
-  const samples = data.samples || [];
-  const targetDist = $n("targetDist");
-  const zeroDist = $n("zeroDist");
-  const massKg = $n("mass_gr") * 0.0000648;
-  const SG = data.SG;
-  const T_K = $n("T_C") + 273.15;
-  const cSound = Math.sqrt(T_K / 273.0) * 331.0;
-
-  const dropCm = -fin.y * 100;
-  const totalLatM = fin.z + (fin.driftZ || 0);
-  const windCm = totalLatM * 100;
-
-  const dropMil = (-fin.y / targetDist) * 1000;
-  const dropMoa = dropMil * 3.4377;
-  const windMil = (totalLatM / targetDist) * 1000;
-  const windMoa = windMil * 3.4377;
-  const corMil  = (fin.coriolisZ / targetDist) * 1000;
-  const driftMil = ((fin.driftZ || 0) / targetDist) * 1000;
-
-  document.getElementById("dispDist").textContent = targetDist.toFixed(0);
-  document.getElementById("dropCm").textContent = dropCm >= 0 ? "−" + dropCm.toFixed(1) + " см" : "+" + (-dropCm).toFixed(1) + " см";
-  document.getElementById("dropMoa").textContent = `${dropMoa.toFixed(1)} MOA · ${dropMil.toFixed(2)} mil`;
-  document.getElementById("windCm").textContent = (windCm > 0 ? "+" : "") + windCm.toFixed(1) + " см";
-  document.getElementById("windMoa").textContent = `${windMoa.toFixed(1)} MOA · ${windMil.toFixed(2)} mil`;
-  document.getElementById("tof").textContent = fin.t.toFixed(2);
-  document.getElementById("vFinal").textContent = fin.v.toFixed(0) + " м/с";
-  document.getElementById("vMach").textContent = `M ${(fin.v / cSound).toFixed(2)}`;
-  document.getElementById("energy").textContent = (0.5 * massKg * fin.v * fin.v).toFixed(0);
-  document.getElementById("sg").textContent = SG.toFixed(2);
-  document.getElementById("sgComment").textContent =
-      SG < 1.0 ? "нестабильна!" :
-      SG < 1.4 ? "marginal" :
-      SG < 2.0 ? "optimal" : "переcтаб.";
-  document.getElementById("corCm").textContent = (fin.coriolisZ * 100).toFixed(1) + " см";
-  document.getElementById("corDir").textContent = `${corMil.toFixed(2)} mil ${fin.coriolisZ > 0 ? "→" : "←"} (Y: ${(fin.coriolisY * 100).toFixed(1)} см)`;
-  document.getElementById("driftCm").textContent = ((fin.driftZ || 0) * 100).toFixed(1) + " см";
-  document.getElementById("driftDir").textContent = `${driftMil.toFixed(2)} mil ${(fin.driftZ || 0) > 0 ? "→" : "←"}`;
-
-  updateChart(samples, targetDist, zeroDist);
-  updateTable(samples, {
-    targetDist,
-    useSpinDrift: $c("useSpinDrift"),
-    SG,
-    dirRight: parseInt($("riflingDir")) === 0,
-  }, cSound, massKg);
+// ============================================================================
+// Simplified Dynamic BC factor (piecewise approx of decompiled function;
+// not byte-for-byte due to length).
+// ============================================================================
+// Byte-faithful port of ZS_TrajectoryBallisticCoefficientDynamicFactor @ 0x00167ec8.
+// Two modes, selected by g_current_drag_model: 0 (G1-loaded) or 1 (G7-loaded).
+// Other drag profiles (G2/G5/G6/G8) disable dynamic BC entirely in the firmware
+// (g_use_dynamic_BC = 0). Constants extracted from .rodata at 0xdec38..0xdec88.
+function lesnik_BCDynamicFactor(mach, dragModelName) {
+  if (dragModelName === "G1") {                            // mode 0
+    if (mach > 2.5) return 1.0;
+    if (mach > 1.8) return 1.0  - (2.5 - mach) * 0.08;     // DAT_001dec38=1.8, DAT_001dec40=0.08
+    if (mach > 1.2) return 0.94 - (1.8 - mach) * 0.15;     // DAT_001dec48=0.94, lit 0.15
+    if (mach > 1.0) return 0.85 - (1.2 - mach) * 0.25;     // lit 0.85, 0.25
+    return (1.0 - mach) * 0.05 + 0.8;                       // DAT_001dec50=0.05, DAT_001dec58=0.8
+  }
+  if (dragModelName === "G7") {                            // mode 1
+    if (mach > 2.5) return 1.0;
+    if (mach > 1.8) return 1.0   - (2.5 - mach) * 0.05;    // DAT_001dec50=0.05
+    if (mach > 1.2) return 0.965 - (1.8 - mach) * 0.1;     // DAT_001dec68=0.965, DAT_001dec60=0.1
+    if (mach > 1.0) return 0.905 - (1.2 - mach) * 0.18;    // DAT_001dec78=0.905, DAT_001dec70=0.18
+    return (1.0 - mach) * 0.03 + 0.87;                      // DAT_001dec80=0.03, DAT_001dec88=0.87
+  }
+  // G2, G5, G6, G8 → firmware disables dynamic BC for these
+  return 1.0;
 }
 
+// ============================================================================
+// Newton's method zeroing solver (port of ZS_trajectoryCalculateSightAngle)
+// Returns launch pitch (deg) such that the bullet crosses LoS at zeroDist.
+// ============================================================================
+function lesnik_SolveSightAngle(bullet, rifling, atmoZero, zeroDistM, windSegments, table, opts) {
+  // Start: 2.5° per firmware
+  let angleDeg = 2.5;
+  for (let i = 0; i < 100; i++) {
+    const drop = lesnik_DropAt(bullet, rifling, atmoZero, zeroDistM, angleDeg, windSegments, table, opts);
+    if (Math.abs(drop) < 1e-4) break;
+    const drop2 = lesnik_DropAt(bullet, rifling, atmoZero, zeroDistM, angleDeg + 0.001, windSegments, table, opts);
+    const derivative = (drop2 - drop) / 0.001;
+    if (Math.abs(derivative) < 1e-12) break;
+    angleDeg -= drop / derivative;
+    if (Math.abs(angleDeg) > 30) break;  // diverged
+  }
+  return angleDeg;
+}
+
+function lesnik_DropAt(bullet, rifling, atmoZero, distM, pitchDeg, windSegments, table, opts) {
+  const sp = [pitchDeg, 0, distM * 100, distM, 0, 0];  // pitch, 0, dist_cm, dist_m, az=0, yaw=0
+  // 🐛 LESNIK-BUG-008: firmware's ZS_TrajectoryCalculateSightAngleFunction does NOT apply
+  // dynamic BC during zeroing (drag k_const computed once before loop, no per-step refresh).
+  // Mirror this — force useDynamicBC=false here so sight angle solver matches firmware.
+  const res = lesnik_Calculate(bullet, rifling, atmoZero, sp, windSegments, table,
+                                { useCoriolis: false, useDrift: false, useDynamicBC: false, dragModel: opts.dragModel });
+  return res.final.y;
+}
+
+// Expose to global
+if (typeof window !== 'undefined') {
+  window.lesnik = {
+    LSC,
+    SaturatedVapourPressure: lesnik_SaturatedVapourPressure,
+    CalculateDensity: lesnik_CalculateDensity,
+    CalculateSoundVelocity: lesnik_CalculateSoundVelocity,
+    CalculatePressure: lesnik_CalculatePressure,
+    CalculateTemperature: lesnik_CalculateTemperature,
+    AtAltitude: lesnik_AtAltitude,
+    TravelTime: lesnik_TravelTime,
+    FindNode: lesnik_FindNode,
+    CalculateDrag: lesnik_CalculateDrag,
+    CalculateTable: lesnik_CalculateTable,
+    CalculateStabilityCoefficient: lesnik_CalculateStabilityCoefficient,
+    WindVector: lesnik_WindVector,
+    Calculate: lesnik_Calculate,
+    BCDynamicFactor: lesnik_BCDynamicFactor,
+    SolveSightAngle: lesnik_SolveSightAngle,
+    GetCalculationStep: lesnik_GetCalculationStep,
+    coriolis_omega_enu,
+    coriolis_basis_from_azimuth_deg,
+    coriolis_cross3,
+  };
+}
+
+
+// Precomputed quadratic-coef drag tables for Lesnik-strict (cached per model).
+const LESNIK_DRAG_TABLES = {};
+for (const [name, pts] of Object.entries(DRAG_TABLES)) {
+    LESNIK_DRAG_TABLES[name] = lesnik_CalculateTable(pts);
+}
+
+// ===================================================================
+// Main computation
+// ===================================================================
+function compute() {
+    const $ = id => document.getElementById(id).value;
+    const $n = id => parseFloat(document.getElementById(id).value);
+    const $c = id => document.getElementById(id).checked;
+
+    const errBox = document.getElementById("errorBox");
+    errBox.innerHTML = "";
+
+    // Lesnik-strict is the only path — byte-faithful port of ZS_TrajectoryCalculate.
+    return computeStrict($, $n, $c, errBox);
+
+    // Legacy idiomatic path (preserved as dead code for reference / debugging)
+    // eslint-disable-next-line no-unreachable
+    try {
+        const muzzleV = $n("muzzleV");
+        const BC = $n("BC");
+        const dragModelName = $("dragModel");
+        const dragTable = DRAG_TABLES[dragModelName];
+        if (!dragTable) throw new Error(`Drag table ${dragModelName} not loaded`);
+
+        const T_C = $n("T_C");
+        const P_Pa = $n("P_hPa") * 100;
+        const RH = $n("RH");
+        const rho = airDensity(T_C, P_Pa, RH);
+        const cSound = soundVelocity(T_C);
+
+        const sightHeight = $n("sightHeight");
+        const zeroDist = $n("zeroDist");
+        const targetDist = $n("targetDist");
+
+        const windV = $n("windV");
+        const windClock = $n("windClock");
+        const wind = windVectorCorrect(windV, windClock);
+
+        const SG = millerStability(
+            $n("mass_gr"), $n("diameter_mm"), $n("length_mm"),
+            $n("twist"), muzzleV, T_C, P_Pa
+        );
+
+        // Solve zero angle
+        const zp = {
+            muzzleV, BC, dragTable, dragModelName, sightHeight, zeroDist,
+            rho, cSound,
+            windX: wind.x, windY: wind.y, windZ: wind.z,
+            useDynamicBC: $c("useDynamicBC"),
+        };
+        const launchAngle = solveZeroAngle(zp);
+
+        // Run full trajectory
+        const params = {
+            muzzleV, BC, dragTable, dragModelName, sightHeight, targetDist,
+            rho, cSound,
+            windX: wind.x, windY: wind.y, windZ: wind.z,
+            launchAngle,
+            latitude: $n("latitude"),
+            azimuth: $n("azimuth"),
+            useCoriolis: $c("useCoriolis"),
+            useSpinDrift: $c("useSpinDrift"),
+            useDynamicBC: $c("useDynamicBC"),
+            SG,
+            riflingDir: parseInt($("riflingDir")),
+        };
+
+        const result = runTrajectory(params);
+        const fin = result.final;
+
+        // Display results
+        const dropM = -fin.y;  // drop = how far below line of sight (line of sight is y=0)
+        // Actually, line of sight starts at y=0 (sight). Bullet starts at y=-sightHeight (bore).
+        // After flight, bullet position y is its absolute height. "Drop" relative to LoS:
+        //   LoS at distance x: y_LoS = -sin(launchAngle) * x ≈ 0 (sight is parallel to bore)
+        // The bullet's vertical position at target: y_bullet = fin.y (with cor_y included)
+        // We zeroed so bullet hits LoS at zero dist. So drop_at_target = y_LoS(target) - y_bullet
+        // But LoS is by definition horizontal (y=0 from shooter's view) → drop = -fin.y
+        const dropCm = -fin.y * 100;
+        const windCm = (fin.z + (params.useSpinDrift ? fin.driftZ : 0)) * 100;
+
+        // Mils & MOA at target distance
+        const targetX = params.targetDist;
+        const milPerMeter = 1000;  // 1 mil at 1000m = 1m → mil = (cm/100) / x * 1000 = cm * 10 / x
+        const moaPerInch = 3.4377;
+        const dropMil = (-fin.y / targetX) * milPerMeter;
+        const dropMoa = dropMil * moaPerInch;
+        const windMil = ((fin.z + (params.useSpinDrift ? fin.driftZ : 0)) / targetX) * milPerMeter;
+        const windMoa = windMil * moaPerInch;
+        const corMil = (fin.coriolisZ / targetX) * milPerMeter;
+        const driftMil = (params.useSpinDrift ? fin.driftZ : 0) / targetX * milPerMeter;
+
+        document.getElementById("dispDist").textContent = targetDist.toFixed(0);
+        document.getElementById("dropCm").textContent = dropCm >= 0 ? "−" + dropCm.toFixed(1) + " см" : "+" + (-dropCm).toFixed(1) + " см";
+        document.getElementById("dropMoa").textContent = `${dropMoa.toFixed(1)} MOA · ${dropMil.toFixed(2)} mil`;
+        document.getElementById("windCm").textContent = (windCm > 0 ? "+" : "") + windCm.toFixed(1) + " см";
+        document.getElementById("windMoa").textContent = `${windMoa.toFixed(1)} MOA · ${windMil.toFixed(2)} mil`;
+        document.getElementById("tof").textContent = fin.t.toFixed(2);
+        document.getElementById("vFinal").textContent = fin.v.toFixed(0) + " м/с";
+        document.getElementById("vMach").textContent = `M ${(fin.v/cSound).toFixed(2)}`;
+        // energy E = ½·m·v² where m is in kg (grain → kg = ·0.0000648)
+        const massKg = $n("mass_gr") * 0.0000648;
+        const energy = 0.5 * massKg * fin.v * fin.v;
+        document.getElementById("energy").textContent = energy.toFixed(0);
+        document.getElementById("sg").textContent = SG.toFixed(2);
+        document.getElementById("sgComment").textContent =
+            SG < 1.0 ? "нестабильна!" :
+            SG < 1.4 ? "marginal" :
+            SG < 2.0 ? "optimal" : "переcтаб.";
+
+        document.getElementById("corCm").textContent = (fin.coriolisZ * 100).toFixed(1) + " см";
+        document.getElementById("corDir").textContent = `${corMil.toFixed(2)} mil ${fin.coriolisZ > 0 ? "→" : "←"} (Y: ${(fin.coriolisY*100).toFixed(1)} см)`;
+        document.getElementById("driftCm").textContent = (fin.driftZ * 100).toFixed(1) + " см";
+        document.getElementById("driftDir").textContent = `${driftMil.toFixed(2)} mil ${fin.driftZ > 0 ? "→" : "←"}`;
+
+        // Update chart
+        updateChart(result.samples, targetDist, zeroDist);
+        updateTable(result.samples, params, cSound, massKg);
+
+    } catch (e) {
+        errBox.innerHTML = `<div class="error">Ошибка расчёта: ${e.message}</div>`;
+        console.error(e);
+    }
+}
+
+// ===================================================================
+// Lesnik-strict pathway — uses the byte-faithful port
+// ===================================================================
+function computeStrict($, $n, $c, errBox) {
+    try {
+        const dragModelName = $("dragModel");
+        const table = LESNIK_DRAG_TABLES[dragModelName];
+        if (!table) throw new Error(`Drag table ${dragModelName} not loaded`);
+
+        // Bullet: [mass_g, BC, MV_mps, diameter_mm, length_mm]
+        // mass in firmware is grams (not grain): convert from UI grain → g
+        const massG = $n("mass_gr") / 15.4324;
+        const bullet = [massG, $n("BC"), $n("muzzleV"), $n("diameter_mm"), $n("length_mm")];
+
+        // Rifling: twist user enters in inches, firmware stores in cm
+        const rifling = {
+            twist_cm: $n("twist") * 2.54,
+            dirRight: parseInt($("riflingDir")) === 0,
+            sightHeightCm: $n("sightHeight") / 10.0,  // UI mm → cm
+        };
+
+        // Atmo: [h0_m, P0_Pa, T0_C, RH_frac]
+        const atmoZero = [0, $n("P_hPa") * 100, $n("T_C"), $n("RH") / 100];
+
+        const targetDist = $n("targetDist");
+        const zeroDist = $n("zeroDist");
+
+        // Wind segments (we only have one global wind, so single segment ending at infinity)
+        const windV = $n("windV");
+        const windClockToFromDeg = $n("windClock") * 30;  // 12=0°, 3=90°, etc. (FROM convention)
+        // Firmware's WindVector treats D as direction angle relative to bullet flight
+        const windSegments = windV > 0 ? [[0, windV, windClockToFromDeg]] : null;
+
+        // 🐛 LESNIK-BUG-006: firmware hardcodes bullet diameter (5.6896 mm = .224 cal) and
+        // length (22.86 mm) for Miller stability — user inputs are NOT used.
+        // Mirror this exactly so SG output matches device.
+        const bulletForStability = [bullet[0], bullet[1], bullet[2], 5.6896, 22.86];
+        const SG = lesnik_CalculateStabilityCoefficient(bulletForStability, rifling.twist_cm, atmoZero);
+
+        const opts = {
+            useCoriolis: $c("useCoriolis"),
+            useDrift: $c("useSpinDrift"),
+            useDynamicBC: $c("useDynamicBC"),
+            dragModel:   dragModelName,
+            latitudeDeg: $n("latitude"),
+            shootingAzimuthDeg: $n("azimuth"),
+            SG,
+        };
+
+        // Solve sight angle (Newton method, ports ZS_trajectoryCalculateSightAngle)
+        const pitchDeg = lesnik_SolveSightAngle(bullet, rifling, atmoZero, zeroDist, null, table, opts);
+
+        // Run full trajectory
+        const shotParams = [
+            pitchDeg,           // [0] pitch
+            0,                  // [1] pitch correction
+            targetDist * 100,   // [2] for step calc (firmware uses cm here)
+            targetDist,         // [3] target distance (m)
+            0,                  // [4] launch azimuth offset (deg)
+            0,                  // [5] yaw / launch azimuth secondary
+        ];
+        const result = lesnik_Calculate(bullet, rifling, atmoZero, shotParams, windSegments, table, opts);
+        const fin = result.final;
+
+        // Same display logic as idiomatic mode
+        const cSound = lesnik_CalculateSoundVelocity($n("T_C") + 273.15);
+        const dropM = -fin.y;
+        const dropCm = dropM * 100;
+        const totalLatM = fin.z + (opts.useDrift ? fin.driftZ : 0);
+        const windCm = totalLatM * 100;
+
+        const milPerMeter = 1000;
+        const dropMil = (-fin.y / targetDist) * milPerMeter;
+        const dropMoa = dropMil * 3.4377;
+        const windMil = (totalLatM / targetDist) * milPerMeter;
+        const windMoa = windMil * 3.4377;
+        const corMil = (fin.coriolisZ / targetDist) * milPerMeter;
+        const driftMil = (opts.useDrift ? fin.driftZ : 0) / targetDist * milPerMeter;
+
+        document.getElementById("dispDist").textContent = targetDist.toFixed(0) + " (strict)";
+        document.getElementById("dropCm").textContent = dropCm >= 0 ? "−" + dropCm.toFixed(1) + " см" : "+" + (-dropCm).toFixed(1) + " см";
+        document.getElementById("dropMoa").textContent = `${dropMoa.toFixed(1)} MOA · ${dropMil.toFixed(2)} mil`;
+        document.getElementById("windCm").textContent = (windCm > 0 ? "+" : "") + windCm.toFixed(1) + " см";
+        document.getElementById("windMoa").textContent = `${windMoa.toFixed(1)} MOA · ${windMil.toFixed(2)} mil`;
+        document.getElementById("tof").textContent = fin.t.toFixed(2);
+        document.getElementById("vFinal").textContent = fin.v.toFixed(0) + " м/с";
+        document.getElementById("vMach").textContent = `M ${(fin.v/cSound).toFixed(2)}`;
+        const massKg = $n("mass_gr") * 0.0000648;
+        const energy = 0.5 * massKg * fin.v * fin.v;
+        document.getElementById("energy").textContent = energy.toFixed(0);
+        document.getElementById("sg").textContent = SG.toFixed(2);
+        document.getElementById("sgComment").textContent =
+            SG < 1.0 ? "нестабильна!" :
+            SG < 1.4 ? "marginal" :
+            SG < 2.0 ? "optimal" : "переcтаб.";
+
+        document.getElementById("corCm").textContent = (fin.coriolisZ * 100).toFixed(1) + " см";
+        document.getElementById("corDir").textContent = `${corMil.toFixed(2)} mil ${fin.coriolisZ > 0 ? "→" : "←"} (Y: ${(fin.coriolisY*100).toFixed(1)} см)`;
+        document.getElementById("driftCm").textContent = (fin.driftZ * 100).toFixed(1) + " см";
+        document.getElementById("driftDir").textContent = `${driftMil.toFixed(2)} mil ${fin.driftZ > 0 ? "→" : "←"}`;
+
+        updateChart(result.samples, targetDist, zeroDist);
+        // Table: build params object compatible with updateTable
+        const tableParams = {
+            targetDist,
+            useSpinDrift: opts.useDrift,
+            riflingDir: parseInt($("riflingDir")),
+            SG,
+        };
+        updateTable(result.samples, tableParams, cSound, massKg);
+
+    } catch (e) {
+        errBox.innerHTML = `<div class="error">Ошибка strict-расчёта: ${e.message}</div>`;
+        console.error(e);
+    }
+}
+
+// ===================================================================
+// Chart + table rendering
+// ===================================================================
+let chart = null;
 function updateChart(samples, targetDist, zeroDist) {
-  const canvas = document.getElementById("chart");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  const dropData = samples.map(s => ({ x: s.x, y: s.y * 100 }));
-  if (chart) {
-    chart.data.datasets[0].data = dropData;
-    chart.options.scales.x.max = targetDist;
-    chart.update("none");
-    return;
-  }
-  chart = new Chart(ctx, {
-    type: "line",
-    data: { datasets: [{
-      label: "Высота траектории (см) над линией прицеливания",
-      data: dropData,
-      borderColor: "#7cb7ff",
-      backgroundColor: "rgba(124,183,255,.1)",
-      borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1,
-    }] },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      scales: {
-        x: { type: "linear", min: 0, max: targetDist, title: { display: true, text: "Дистанция (м)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
-        y: { title: { display: true, text: "Высота / Drop (см)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
-      },
-      plugins: {
-        legend: { labels: { color: "#d6dde6" } },
-        tooltip: { callbacks: { label: c => `x=${c.parsed.x.toFixed(0)} м, y=${c.parsed.y.toFixed(1)} см` } },
-      },
-    },
-  });
+    const ctx = document.getElementById("chart").getContext("2d");
+    const dropData = samples.map(s => ({ x: s.x, y: s.y * 100 }));  // cm
+
+    if (chart) {
+        chart.data.datasets[0].data = dropData;
+        chart.options.scales.x.max = targetDist;
+        chart.update("none");
+        return;
+    }
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            datasets: [{
+                label: "Высота траектории (см) над линией прицеливания",
+                data: dropData,
+                borderColor: "#7cb7ff",
+                backgroundColor: "rgba(124,183,255,.1)",
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+                x: { type: "linear", min: 0, max: targetDist, title: { display: true, text: "Дистанция (м)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
+                y: { title: { display: true, text: "Высота / Drop (см)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
+            },
+            plugins: {
+                legend: { labels: { color: "#d6dde6" } },
+                tooltip: { callbacks: {
+                    label: c => `x=${c.parsed.x.toFixed(0)} м, y=${c.parsed.y.toFixed(1)} см`
+                }},
+            },
+        },
+    });
 }
 
 function updateTable(samples, params, cSound, massKg) {
-  const tbody = document.getElementById("dropTable");
-  if (!tbody) return;
-  const targetX = params.targetDist;
-  const step = targetX <= 300 ? 25 : targetX <= 600 ? 50 : 100;
-  const distances = [];
-  for (let d = step; d <= targetX; d += step) distances.push(d);
-  if (distances[distances.length - 1] !== targetX) distances.push(targetX);
+    const tbody = document.getElementById("dropTable");
+    // Use sample subsets at fixed distances: 50, 100, 150, 200, ..., target
+    const targetX = params.targetDist;
+    const step = targetX <= 300 ? 25 : targetX <= 600 ? 50 : 100;
+    const distances = [];
+    for (let d = step; d <= targetX; d += step) distances.push(d);
+    if (distances[distances.length-1] !== targetX) distances.push(targetX);
 
-  const driftFactor = MODE === "mirror" ? (1.0 / 254.0) : 0.0254;
-  const sign = params.dirRight ? 1 : -1;
-
-  const rows = distances.map(d => {
-    let best = samples[0], bestDiff = Infinity;
-    for (const s of samples) {
-      const diff = Math.abs(s.x - d);
-      if (diff < bestDiff) { bestDiff = diff; best = s; }
-    }
-    return { d, s: best };
-  });
-
-  tbody.innerHTML = rows.map(({ d, s }) => {
-    if (!s) return "";
-    const dropCm = -s.y * 100;
-    const dropMil = (-s.y / d) * 1000;
-    const dropMoa = dropMil * 3.4377;
-    const driftZ = params.useSpinDrift && s.t > 0
-      ? sign * (params.SG + 1.2) * 1.25 * Math.pow(s.t, LITZ_EXP) * driftFactor
-      : 0;
-    const totalZ = (s.z + driftZ) * 100;
-    const totalMil = ((s.z + driftZ) / d) * 1000;
-    const energy = 0.5 * massKg * s.v * s.v;
-    return `<tr><td>${d}</td><td>${dropCm.toFixed(1)}</td><td>${dropMoa.toFixed(2)}</td><td>${dropMil.toFixed(2)}</td><td>${totalZ.toFixed(1)}</td><td>${totalMil.toFixed(2)}</td><td>${s.v.toFixed(0)}</td><td>${energy.toFixed(0)}</td><td>${s.t.toFixed(2)}</td></tr>`;
-  }).join("");
-}
-
-function showLoading(on) {
-  const dispDist = document.getElementById("dispDist");
-  if (dispDist) dispDist.style.opacity = on ? "0.4" : "1";
-}
-
-// =============================================================================
-// Snapshot — сохранение/загрузка текущих входных + результата + режима
-// =============================================================================
-const SNAPSHOT_INPUT_KEYS = [
-  "mass_gr","BC","muzzleV","dragModel","diameter_mm","length_mm","twist","riflingDir","sightHeight",
-  "targetDist","zeroDist","T_C","P_hPa","RH","windV","windClock","latitude","azimuth",
-];
-const SNAPSHOT_CHECKBOX_KEYS = ["useCoriolis","useSpinDrift","useDynamicBC"];
-
-function getCurrentInputs() {
-  const out = {};
-  for (const k of SNAPSHOT_INPUT_KEYS) {
-    const el = document.getElementById(k);
-    if (!el) continue;
-    out[k] = (el.type === "number") ? (parseFloat(el.value) || 0) : el.value;
-  }
-  for (const k of SNAPSHOT_CHECKBOX_KEYS) {
-    const el = document.getElementById(k);
-    if (el) out[k] = !!el.checked;
-  }
-  return out;
-}
-
-function setInputs(inputs) {
-  for (const k of SNAPSHOT_INPUT_KEYS) {
-    if (inputs[k] === undefined) continue;
-    const el = document.getElementById(k);
-    if (el) el.value = inputs[k];
-  }
-  for (const k of SNAPSHOT_CHECKBOX_KEYS) {
-    if (inputs[k] === undefined) continue;
-    const el = document.getElementById(k);
-    if (el) el.checked = !!inputs[k];
-  }
-}
-
-function exportSnapshot() {
-  const inputs = lastInputs || getCurrentInputs();
-  const snap = {
-    schema: "rika-calculator-snapshot/1.0",
-    timestamp: new Date().toISOString(),
-    mode: MODE,
-    pageURL: location.href,
-    inputs,
-    result: lastResult,                 // {mode, SG, sightAngle, final, samples}
-    apiURL: API_URL,
-  };
-  const json = JSON.stringify(snap, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  a.href = url;
-  a.download = `rika-snapshot-${MODE}-${ts}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function importSnapshot(file) {
-  const reader = new FileReader();
-  reader.onload = async e => {
-    try {
-      const snap = JSON.parse(e.target.result);
-      if (!snap || typeof snap !== "object") throw new Error("Файл повреждён или не JSON-объект");
-      if (!snap.inputs || typeof snap.inputs !== "object") throw new Error("В JSON нет блока 'inputs'");
-
-      setInputs(snap.inputs);
-
-      const notes = [];
-      if (snap.mode && snap.mode !== MODE) {
-        notes.push(`⚠ Снимок сделан в режиме «${snap.mode}», вы сейчас в «${MODE}». Результат может отличаться.`);
-      }
-      if (snap.timestamp) notes.push(`📅 Сохранён: ${new Date(snap.timestamp).toLocaleString()}`);
-      if (snap.schema) notes.push(`🔖 Схема: ${snap.schema}`);
-
-      await compute();
-      alert(`Сценарий загружен ✓\n\n${notes.join("\n") || "(без метаданных)"}`);
-    } catch (err) {
-      alert("Ошибка загрузки сценария: " + err.message);
-    }
-  };
-  reader.readAsText(file);
-}
-
-// =============================================================================
-// Профили: render UI + draft-buffered editor + localStorage persistence
-// =============================================================================
-function escapeHtml(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}
-
-// Preset bar reflects SAVED state (not draft) — user selects committed profiles.
-function renderPresetBar() {
-  const bar = document.querySelector(".preset-bar");
-  if (!bar) return;
-  bar.innerHTML = Object.entries(savedProfiles).map(([id, p]) =>
-    `<button class="preset-btn" data-preset="${escapeHtml(id)}" title="Готовый профиль match-пули — клик подгружает BC, MV, массу, диаметр, длину, твист и drag model.">${escapeHtml(p.name || id)}</button>`
-  ).join("");
-}
-
-function applyPreset(id) {
-  const p = savedProfiles[id];
-  if (!p) return;
-  const fields = ["dragModel", "BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm", "twist"];
-  for (const k of fields) {
-    if (p[k] === undefined) continue;
-    const el = document.getElementById(k);
-    if (el) el.value = p[k];
-  }
-  compute();
-}
-
-// Profile editor renders DRAFT state with dirty markers.
-function renderProfileEditor() {
-  const list = document.getElementById("profile-list");
-  if (!list) return;
-
-  const validation = validateAllDraft();
-
-  list.innerHTML = Object.entries(draftProfiles).map(([id, p]) => {
-    const dirty = profileDirty(id);
-    const isNew = !savedProfiles[id];
-    const errs = validation[id] || [];
-    const headerBadge = isNew ? '<span class="dirty-badge new">новый</span>' :
-                        dirty  ? '<span class="dirty-badge">изменён</span>' : '';
-
-    return `
-    <div class="profile-card ${dirty ? 'is-dirty' : ''} ${errs.length ? 'is-invalid' : ''}" data-id="${escapeHtml(id)}">
-      <div class="profile-card-head">
-        <input type="text" class="profile-name" value="${escapeHtml(p.name || id)}" placeholder="Имя профиля" data-key="name">
-        ${headerBadge}
-        <div class="profile-card-actions">
-          <button class="dup-btn" type="button" title="Дублировать">⎘</button>
-          <button class="del-btn" type="button" title="Удалить">✕</button>
-        </div>
-      </div>
-      <div class="profile-fields">
-        <label>Drag<select data-key="dragModel">
-          ${DRAG_MODELS.map(m => `<option value="${m}" ${p.dragModel === m ? "selected" : ""}>${m}</option>`).join("")}
-        </select></label>
-        <label>BC<input type="number" data-key="BC" value="${p.BC ?? ''}" step="0.001" min="${FIELD_RANGES.BC.min}" max="${FIELD_RANGES.BC.max}"></label>
-        <label>MV, м/с<input type="number" data-key="muzzleV" value="${p.muzzleV ?? ''}" step="1" min="${FIELD_RANGES.muzzleV.min}" max="${FIELD_RANGES.muzzleV.max}"></label>
-        <label>Масса, gr<input type="number" data-key="mass_gr" value="${p.mass_gr ?? ''}" step="1" min="${FIELD_RANGES.mass_gr.min}" max="${FIELD_RANGES.mass_gr.max}"></label>
-        <label>Диам., мм<input type="number" data-key="diameter_mm" value="${p.diameter_mm ?? ''}" step="0.01" min="${FIELD_RANGES.diameter_mm.min}" max="${FIELD_RANGES.diameter_mm.max}"></label>
-        <label>Длина, мм<input type="number" data-key="length_mm" value="${p.length_mm ?? ''}" step="0.1" min="${FIELD_RANGES.length_mm.min}" max="${FIELD_RANGES.length_mm.max}"></label>
-        <label>Твист, дюйм<input type="number" data-key="twist" value="${p.twist ?? ''}" step="0.05" min="${FIELD_RANGES.twist.min}" max="${FIELD_RANGES.twist.max}"></label>
-      </div>
-      ${errs.length ? `<div class="profile-errors">${errs.map(e => `<div>• ${escapeHtml(e)}</div>`).join("")}</div>` : ""}
-    </div>`;
-  }).join("");
-
-  bindEditorEvents();
-  updateSaveBar();
-}
-
-function bindEditorEvents() {
-  document.querySelectorAll(".profile-card").forEach(card => {
-    const id = card.dataset.id;
-    card.querySelectorAll("[data-key]").forEach(input => {
-      input.addEventListener("input", e => {
-        const key = e.target.dataset.key;
-        const raw = e.target.value;
-        if (e.target.type === "number") {
-          draftProfiles[id][key] = raw === "" ? NaN : parseFloat(raw);
-        } else {
-          draftProfiles[id][key] = raw;
+    const rows = distances.map(d => {
+        // find closest sample
+        let best = samples[0];
+        let bestDiff = Infinity;
+        for (const s of samples) {
+            const diff = Math.abs(s.x - d);
+            if (diff < bestDiff) { bestDiff = diff; best = s; }
         }
-        renderProfileEditor();   // re-render to update dirty markers + validation
-      });
+        return { d, s: best };
     });
-    card.querySelector(".dup-btn").addEventListener("click", () => {
-      const newId = id + "_copy_" + Date.now();
-      draftProfiles[newId] = { ...draftProfiles[id], name: (draftProfiles[id].name || id) + " (копия)" };
-      renderProfileEditor();
+
+    tbody.innerHTML = rows.map(({d, s}) => {
+        const dropCm = -s.y * 100;
+        const dropMil = (-s.y / d) * 1000;
+        const dropMoa = dropMil * 3.4377;
+        const driftZ = params.useSpinDrift && s.t > 0 ? ((params.riflingDir===1?-1:1)*(params.SG+1.2)*1.25*Math.pow(s.t, LITZ_EXP)) * 0.0254 : 0;
+        const totalZ = (s.z + driftZ) * 100;
+        const totalMil = ((s.z + driftZ) / d) * 1000;
+        const energy = 0.5 * massKg * s.v * s.v;
+        const cls = (Math.abs(d - 0) < 1) ? "zero" : "";
+        return `<tr class="${cls}"><td>${d}</td><td>${dropCm.toFixed(1)}</td><td>${dropMoa.toFixed(2)}</td><td>${dropMil.toFixed(2)}</td><td>${totalZ.toFixed(1)}</td><td>${totalMil.toFixed(2)}</td><td>${s.v.toFixed(0)}</td><td>${energy.toFixed(0)}</td><td>${s.t.toFixed(2)}</td></tr>`;
+    }).join("");
+}
+
+// ===================================================================
+// Presets
+// ===================================================================
+const PRESETS = {
+    "308_168smk": {
+        dragModel: "G7", BC: 0.218, muzzleV: 817, mass_gr: 168,
+        diameter_mm: 7.82, length_mm: 31.2, twist: 11.25,
+    },
+    "338_300smk": {
+        dragModel: "G7", BC: 0.420, muzzleV: 820, mass_gr: 300,
+        diameter_mm: 8.59, length_mm: 41.9, twist: 9.35,
+    },
+    "65cm_140eldm": {
+        dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140,
+        diameter_mm: 6.71, length_mm: 35.6, twist: 8,
+    },
+    "223_77smk": {
+        dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,
+        diameter_mm: 5.69, length_mm: 24.9, twist: 7,
+    },
+};
+
+document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const p = PRESETS[btn.dataset.preset];
+        if (!p) return;
+        for (const [k, v] of Object.entries(p)) {
+            const el = document.getElementById(k);
+            if (el) el.value = v;
+        }
+        compute();
     });
-    card.querySelector(".del-btn").addEventListener("click", () => {
-      if (Object.keys(draftProfiles).length <= 1) { alert("Нельзя удалить последний профиль."); return; }
-      if (!confirm(`Удалить «${draftProfiles[id].name || id}»? Изменение применится после Сохранения.`)) return;
-      delete draftProfiles[id];
-      renderProfileEditor();
-    });
-  });
-}
-
-function updateSaveBar() {
-  const bar = document.getElementById("save-bar");
-  if (!bar) return;
-  const dirty = isDirty();
-  bar.style.display = dirty ? "flex" : "none";
-  if (dirty) {
-    const summary = computeDirtySummary();
-    const errs = validateAllDraft();
-    const errCount = Object.keys(errs).length;
-    const saveBtn = document.getElementById("save-profiles-btn");
-    const status = document.getElementById("save-bar-status");
-    if (status) status.textContent = errCount
-      ? `${summary} · ${errCount} ${errCount === 1 ? "профиль с ошибками" : "профилей с ошибками"}`
-      : summary;
-    if (saveBtn) {
-      saveBtn.disabled = errCount > 0;
-      saveBtn.title = errCount > 0 ? "Исправьте ошибки чтобы сохранить" : "";
-    }
-  }
-}
-
-function computeDirtySummary() {
-  let modified = 0, added = 0, removed = 0;
-  for (const id of Object.keys(draftProfiles)) {
-    if (!savedProfiles[id]) added++;
-    else if (profileDirty(id)) modified++;
-  }
-  for (const id of Object.keys(savedProfiles)) {
-    if (!draftProfiles[id]) removed++;
-  }
-  const parts = [];
-  if (modified) parts.push(`изменено: ${modified}`);
-  if (added) parts.push(`добавлено: ${added}`);
-  if (removed) parts.push(`удалено: ${removed}`);
-  return "Несохранённые изменения · " + (parts.join(", ") || "—");
-}
-
-function saveDraft() {
-  const errs = validateAllDraft();
-  if (Object.keys(errs).length > 0) {
-    alert("Есть ошибки валидации. Исправьте подсвеченные поля.");
-    return;
-  }
-  savedProfiles = clone(draftProfiles);
-  persistSavedProfiles();
-  renderPresetBar();
-  renderProfileEditor();   // dirty badges should disappear
-}
-
-function discardDraft() {
-  if (!isDirty()) return;
-  if (!confirm("Отменить все несохранённые изменения и вернуться к сохранённому состоянию?")) return;
-  draftProfiles = clone(savedProfiles);
-  renderProfileEditor();
-}
-
-function addProfileDraft() {
-  const newId = "custom_" + Date.now();
-  draftProfiles[newId] = {
-    name: "Новый профиль", dragModel: "G7",
-    BC: 0.250, muzzleV: 800, mass_gr: 150,
-    diameter_mm: 7.62, length_mm: 30.0, twist: 10.0,
-  };
-  renderProfileEditor();
-}
-
-function resetToDefaultsDraft() {
-  if (!confirm("Заменить все профили в редакторе на дефолтные? (Сохранения пока не произойдёт — нужно нажать «Сохранить»)")) return;
-  draftProfiles = clone(DEFAULT_PROFILES);
-  renderProfileEditor();
-}
-
-function exportSavedProfiles() {
-  const json = JSON.stringify(savedProfiles, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "rika-calculator-profiles.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importProfilesIntoDraft(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (typeof data !== "object" || data === null || Array.isArray(data)) throw new Error("Файл должен содержать объект профилей");
-      if (Object.keys(data).length === 0) throw new Error("Файл пустой");
-      for (const [id, p] of Object.entries(data)) {
-        if (!p || typeof p !== "object") throw new Error(`Профиль ${id} не объект`);
-        const errs = validateProfile(p);
-        if (errs.length > 0) throw new Error(`${id}: ${errs.join(', ')}`);
-      }
-      draftProfiles = data;
-      renderProfileEditor();
-      alert(`Импортировано ${Object.keys(data).length} профилей в черновик. Нажмите «Сохранить» чтобы применить.`);
-    } catch (err) {
-      alert("Ошибка импорта: " + err.message);
-    }
-  };
-  reader.readAsText(file);
-}
-
-// =============================================================================
-// Wiring
-// =============================================================================
-renderPresetBar();
-renderProfileEditor();
-
-// Preset bar — delegated click handler
-document.querySelector(".preset-bar")?.addEventListener("click", e => {
-  const btn = e.target.closest(".preset-btn");
-  if (btn) applyPreset(btn.dataset.preset);
 });
 
-// Editor toolbar
-document.getElementById("add-profile-btn")?.addEventListener("click", addProfileDraft);
-document.getElementById("reset-profiles-btn")?.addEventListener("click", resetToDefaultsDraft);
-document.getElementById("export-profiles-btn")?.addEventListener("click", exportSavedProfiles);
-document.getElementById("import-profiles-btn")?.addEventListener("click", () => document.getElementById("import-profiles-file").click());
-document.getElementById("import-profiles-file")?.addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (file) importProfilesIntoDraft(file);
-  e.target.value = "";
-});
-
-// Save bar
-document.getElementById("save-profiles-btn")?.addEventListener("click", saveDraft);
-document.getElementById("discard-profiles-btn")?.addEventListener("click", discardDraft);
-
-// Snapshot
-document.getElementById("export-snapshot-btn")?.addEventListener("click", exportSnapshot);
-document.getElementById("import-snapshot-btn")?.addEventListener("click", () => document.getElementById("import-snapshot-file").click());
-document.getElementById("import-snapshot-file")?.addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (file) importSnapshot(file);
-  e.target.value = "";
-});
-
-// Cmd/Ctrl+S to save when editor is open and dirty
-document.addEventListener("keydown", e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-    if (isDirty()) {
-      e.preventDefault();
-      saveDraft();
-    }
-  } else if (e.key === "Escape") {
-    if (isDirty() && document.activeElement?.closest(".profile-editor")) {
-      discardDraft();
-    }
-  }
-});
-
-// Warn before navigating away with unsaved changes
-window.addEventListener("beforeunload", e => {
-  if (isDirty()) {
-    e.preventDefault();
-    e.returnValue = "";
-    return "";
-  }
-});
-
-// Debounced recalc on main form changes
-let debounceTimer = null;
-const DEBOUNCE_MS = 350;
+// Live recalc on any input change
 document.querySelectorAll(".inputs input, .inputs select").forEach(el => {
-  if (el.closest(".profile-editor")) return;   // editor inputs do NOT trigger ballistic recompute
-  const trigger = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(compute, DEBOUNCE_MS); };
-  el.addEventListener("input", trigger);
-  el.addEventListener("change", trigger);
+    el.addEventListener("input", compute);
+    el.addEventListener("change", compute);
 });
 
+// Initial compute
 compute();
 </script>
+<!-- AUTO-INJECTED by sync_calculators.py — do not edit -->
+<style>
+#rcv-banner {position:fixed; bottom:0; right:0; background:#1a1a1a; color:#aaa;
+  font:11px/1.4 system-ui,-apple-system,monospace; padding:6px 12px;
+  border-top-left-radius:6px; z-index:9999; opacity:0.88;
+  border-top:1px solid #333; border-left:1px solid #333;}
+#rcv-banner a, #rcv-banner button {color:#fa6; text-decoration:underline;
+  cursor:pointer; background:none; border:none; font:inherit; padding:0;}
+#rcv-banner a:hover, #rcv-banner button:hover {color:#fc8;}
+#rcv-banner .v {color:#5bf; font-weight:600;}
+#rcv-banner .sep {color:#555;}
+#rcv-changelog {display:none; position:fixed; bottom:32px; right:0;
+  width:min(640px, 90vw); max-height:60vh; overflow:auto;
+  background:#1e1e1e; color:#ccc; font:12px/1.5 system-ui,-apple-system;
+  padding:18px 22px; border-top-left-radius:8px; border:1px solid #333;
+  z-index:9999; white-space:pre-wrap; box-shadow:0 -4px 20px rgba(0,0,0,0.5);}
+#rcv-changelog h1, #rcv-changelog h2 {color:#5bf; margin:8px 0 4px;
+  font-size:13px; font-weight:600;}
+#rcv-changelog code {background:#2a2a2a; padding:1px 4px; border-radius:3px;
+  font-size:11px;}
+</style>
+<div id="rcv-banner">
+  <span class="v">v2026-05-24 · r:28e24f1</span>
+  <span class="sep">·</span> <button onclick="var c=document.getElementById('rcv-changelog');c.style.display=c.style.display==='block'?'none':'block';">changelog</button>
+  <span class="sep">·</span> <a href="https://github.com/shah1git/rika-firmware" target="_blank" rel="noopener">source</a>
+</div>
+<div id="rcv-changelog"><h1>Changelog</h1>
+
+Автоматический changelog калькуляторов, синхронизируется из <code>shah1git/rika-firmware</code> через <code>tools/sync_calculators.py</code>.
+
+<h2>v2026-05-24 · r:28e24f1</h2>
+
+_Published 2026-05-24 13:56 UTC from <code>shah1git/rika-firmware@28e24f1</code>_
+
+- _(no new commits affecting calculators since last sync)_</div>
+<!-- /AUTO-INJECTED -->
 </body>
 </html>
