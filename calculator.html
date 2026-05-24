@@ -286,9 +286,13 @@ tr.zero td { background: rgba(126,226,168,.08); }
     <details class="profile-editor" style="margin-top:8px;">
       <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">✏️ Редактировать профили пуль</summary>
       <style>
-        .profile-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; }
+        .profile-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; transition: border-color .15s, background .15s; }
+        .profile-card.is-dirty { border-color: #d49a4e; background: rgba(212, 154, 78, .05); }
+        .profile-card.is-invalid { border-color: var(--bad); background: rgba(255, 115, 115, .05); }
         .profile-card-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
         .profile-card-head .profile-name { flex: 1; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-size: 12px; font-weight: 600; }
+        .dirty-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(212, 154, 78, .15); color: #d49a4e; border: 1px solid #d49a4e; text-transform: lowercase; letter-spacing: .3px; font-weight: 600; flex-shrink: 0; }
+        .dirty-badge.new { background: rgba(126, 226, 168, .12); color: var(--good); border-color: var(--good); }
         .profile-card-actions { display: flex; gap: 2px; }
         .profile-card-actions button { padding: 2px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg-dim); cursor: pointer; font-size: 12px; line-height: 1; }
         .profile-card-actions button:hover { color: var(--accent); }
@@ -297,18 +301,46 @@ tr.zero td { background: rgba(126,226,168,.08); }
         .profile-fields label { display: flex; justify-content: space-between; align-items: center; gap: 4px; color: var(--fg-dim); }
         .profile-fields input, .profile-fields select { width: 75px; padding: 2px 4px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-family: "SF Mono", Menlo, monospace; font-size: 11px; text-align: right; }
         .profile-fields select { text-align: left; }
+        .profile-fields input:invalid { border-color: var(--bad); }
+        .profile-errors { margin-top: 6px; padding: 6px 8px; background: rgba(255, 115, 115, .07); border-left: 2px solid var(--bad); border-radius: 0 3px 3px 0; font-size: 11px; color: var(--bad); line-height: 1.4; }
         .profile-editor .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); }
+        .save-bar { display: none; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; background: rgba(212, 154, 78, .08); border: 1px solid #d49a4e; border-radius: 4px; }
+        .save-bar .save-bar-status { flex: 1; font-size: 11.5px; color: #d49a4e; font-weight: 600; line-height: 1.4; }
+        .save-bar button { padding: 5px 12px; border: 1px solid var(--rule); border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .save-bar #save-profiles-btn { background: var(--good); color: #0c1c14; border-color: var(--good); }
+        .save-bar #save-profiles-btn:hover:not(:disabled) { background: #93eebd; }
+        .save-bar #save-profiles-btn:disabled { background: var(--bg-input); color: var(--fg-dim); cursor: not-allowed; border-color: var(--rule); }
+        .save-bar #discard-profiles-btn { background: var(--bg-input); color: var(--fg); }
+        .save-bar #discard-profiles-btn:hover { color: var(--bad); border-color: var(--bad); }
+        .scenario-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 0 0; }
       </style>
       <div style="padding:10px 0 4px 0;">
         <div id="profile-list" style="display:flex; flex-direction:column; gap:6px;"></div>
         <div class="editor-toolbar">
           <button id="add-profile-btn" class="preset-btn" type="button">+ Добавить</button>
-          <button id="reset-profiles-btn" class="preset-btn" type="button">↺ Сбросить</button>
+          <button id="reset-profiles-btn" class="preset-btn" type="button">↺ Дефолты</button>
           <button id="export-profiles-btn" class="preset-btn" type="button">⬇ Экспорт</button>
           <button id="import-profiles-btn" class="preset-btn" type="button">⬆ Импорт</button>
           <input type="file" id="import-profiles-file" style="display:none" accept=".json,application/json">
         </div>
-        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Изменения сохраняются в браузере (localStorage). Для переноса между устройствами — Экспорт/Импорт JSON.</p>
+        <div class="save-bar" id="save-bar">
+          <div class="save-bar-status" id="save-bar-status">Несохранённые изменения</div>
+          <button id="discard-profiles-btn" type="button" title="Esc">Отмена</button>
+          <button id="save-profiles-btn" type="button" title="Cmd/Ctrl+S">Сохранить</button>
+        </div>
+        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Изменения остаются в редакторе пока вы не нажмёте «Сохранить». Профили хранятся в браузере (localStorage). Горячие клавиши: <code>Cmd/Ctrl+S</code> — сохранить, <code>Esc</code> — отменить.</p>
+      </div>
+    </details>
+
+    <details class="snapshot-tools" style="margin-top:8px;">
+      <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">📁 Сценарий — сохранить/загрузить расчёт</summary>
+      <div style="padding:10px 0 4px 0;">
+        <div class="scenario-tools">
+          <button id="export-snapshot-btn" class="preset-btn" type="button" title="Сохранить текущий ввод + результат в JSON">⬇ Сохранить сценарий</button>
+          <button id="import-snapshot-btn" class="preset-btn" type="button" title="Загрузить ранее сохранённый сценарий">⬆ Загрузить сценарий</button>
+          <input type="file" id="import-snapshot-file" style="display:none" accept=".json,application/json">
+        </div>
+        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Сохраняет JSON со всеми входными параметрами + результатом расчёта + режимом (mirror/corrected) + timestamp. Файл можно передать для анализа или использовать как backup конкретного сценария.</p>
       </div>
     </details>
 
@@ -435,7 +467,7 @@ const MODE = "mirror";
 // =============================================================================
 // Frontend caller for rika-calc-api Cloudflare Worker.
 // Алгоритм баллистики живёт на сервере (приватный код), здесь — только UI
-// и формирование запросов. Плюс editor пользовательских профилей пуль.
+// и формирование запросов. Plus draft-buffered профили пуль с explicit save.
 // =============================================================================
 const API_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:") ? "http://localhost:8787/calc" : "https://rika-ballistic-calc.shahanov.workers.dev/calc";
 
@@ -443,16 +475,26 @@ const $ = id => document.getElementById(id).value;
 const $n = id => parseFloat(document.getElementById(id).value);
 const $c = id => document.getElementById(id).checked;
 
-// Default profiles — used at first launch and on "reset to defaults"
 const DEFAULT_PROFILES = {
   "308_168smk":   { name: ".308 168gr SMK",   dragModel: "G7", BC: 0.218, muzzleV: 817, mass_gr: 168, diameter_mm: 7.82, length_mm: 31.2, twist: 11.25 },
   "338_300smk":   { name: ".338 300gr SMK",   dragModel: "G7", BC: 0.420, muzzleV: 820, mass_gr: 300, diameter_mm: 8.59, length_mm: 41.9, twist: 9.35 },
-  "65cm_140eldm": { name: "6.5CM 140gr ELD-M",dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140, diameter_mm: 6.71, length_mm: 35.6, twist: 8 },
-  "223_77smk":    { name: ".223 77gr SMK",    dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,  diameter_mm: 5.69, length_mm: 24.9, twist: 7 },
+  "65cm_140eldm": { name: "6.5CM 140gr ELD-M",dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140, diameter_mm: 6.71, length_mm: 35.6, twist: 8.0 },
+  "223_77smk":    { name: ".223 77gr SMK",    dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,  diameter_mm: 5.69, length_mm: 24.9, twist: 7.0 },
 };
 
 const LS_KEY = "rika-calculator-profiles";
 const LITZ_EXP = 1.83;
+
+const FIELD_RANGES = {
+  BC:          { min: 0.05, max: 2.0,  label: "BC" },
+  muzzleV:     { min: 100,  max: 1500, label: "MV" },
+  mass_gr:     { min: 20,   max: 900,  label: "Масса (gr)" },
+  diameter_mm: { min: 4,    max: 15,   label: "Диаметр (мм)" },
+  length_mm:   { min: 10,   max: 60,   label: "Длина (мм)" },
+  twist:       { min: 5,    max: 20,   label: "Твист (дюйм)" },
+};
+
+const DRAG_MODELS = ["G1","G2","G5","G6","G7","G8"];
 
 function loadProfiles() {
   try {
@@ -461,19 +503,62 @@ function loadProfiles() {
       const parsed = JSON.parse(saved);
       if (typeof parsed === "object" && parsed !== null && Object.keys(parsed).length > 0) return parsed;
     }
-  } catch (e) { console.warn("Не удалось прочитать профили из localStorage:", e); }
+  } catch (e) { console.warn("Не удалось прочитать профили:", e); }
   return JSON.parse(JSON.stringify(DEFAULT_PROFILES));
 }
 
-function saveProfiles() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(userProfiles)); }
+function persistSavedProfiles() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(savedProfiles)); }
   catch (e) { console.warn("Не удалось сохранить профили:", e); }
 }
 
-let userProfiles = loadProfiles();
+// === Two-tier state: savedProfiles (committed) + draftProfiles (in-progress) ===
+let savedProfiles = loadProfiles();
+let draftProfiles = clone(savedProfiles);
 
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function isDirty() {
+  return JSON.stringify(savedProfiles) !== JSON.stringify(draftProfiles);
+}
+
+function profileDirty(id) {
+  if (!savedProfiles[id]) return true;          // new
+  if (!draftProfiles[id]) return true;          // deleted in draft
+  return JSON.stringify(savedProfiles[id]) !== JSON.stringify(draftProfiles[id]);
+}
+
+// =============================================================================
+// Validation
+// =============================================================================
+function validateProfile(p) {
+  const errs = [];
+  if (!p.name || typeof p.name !== "string" || p.name.trim() === "") errs.push("имя пустое");
+  if (!DRAG_MODELS.includes(p.dragModel)) errs.push("drag model");
+  for (const [key, { min, max, label }] of Object.entries(FIELD_RANGES)) {
+    const v = p[key];
+    if (typeof v !== "number" || !isFinite(v)) errs.push(`${label}: пусто/не число`);
+    else if (v < min || v > max) errs.push(`${label}: ${v} вне диапазона [${min}..${max}]`);
+  }
+  return errs;
+}
+
+function validateAllDraft() {
+  const out = {};
+  for (const [id, p] of Object.entries(draftProfiles)) {
+    const errs = validateProfile(p);
+    if (errs.length > 0) out[id] = errs;
+  }
+  return out;
+}
+
+// =============================================================================
+// Main computation (API call)
+// =============================================================================
 let chart = null;
 let inFlight = false;
+let lastResult = null;       // last successful API response (for snapshot export)
+let lastInputs = null;       // last inputs submitted (for snapshot export)
 
 async function compute() {
   if (inFlight) return;
@@ -484,6 +569,7 @@ async function compute() {
     inFlight = true;
     showLoading(true);
 
+    lastInputs = getCurrentInputs();
     const massG = $n("mass_gr") / 15.4324;
     const body = {
       mode: MODE,
@@ -517,6 +603,7 @@ async function compute() {
       throw new Error(`HTTP ${res.status}: ${txt}`);
     }
     const data = await res.json();
+    lastResult = data;
     renderResult(data);
   } catch (e) {
     if (errBox) errBox.innerHTML = `<div class="error">Ошибка: ${e.message}</div>`;
@@ -537,8 +624,7 @@ function renderResult(data) {
   const T_K = $n("T_C") + 273.15;
   const cSound = Math.sqrt(T_K / 273.0) * 331.0;
 
-  const dropM = -fin.y;
-  const dropCm = dropM * 100;
+  const dropCm = -fin.y * 100;
   const totalLatM = fin.z + (fin.driftZ || 0);
   const windCm = totalLatM * 100;
 
@@ -563,7 +649,6 @@ function renderResult(data) {
       SG < 1.0 ? "нестабильна!" :
       SG < 1.4 ? "marginal" :
       SG < 2.0 ? "optimal" : "переcтаб.";
-
   document.getElementById("corCm").textContent = (fin.coriolisZ * 100).toFixed(1) + " см";
   document.getElementById("corDir").textContent = `${corMil.toFixed(2)} mil ${fin.coriolisZ > 0 ? "→" : "←"} (Y: ${(fin.coriolisY * 100).toFixed(1)} см)`;
   document.getElementById("driftCm").textContent = ((fin.driftZ || 0) * 100).toFixed(1) + " см";
@@ -591,22 +676,15 @@ function updateChart(samples, targetDist, zeroDist) {
   }
   chart = new Chart(ctx, {
     type: "line",
-    data: {
-      datasets: [{
-        label: "Высота траектории (см) над линией прицеливания",
-        data: dropData,
-        borderColor: "#7cb7ff",
-        backgroundColor: "rgba(124,183,255,.1)",
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        tension: 0.1,
-      }],
-    },
+    data: { datasets: [{
+      label: "Высота траектории (см) над линией прицеливания",
+      data: dropData,
+      borderColor: "#7cb7ff",
+      backgroundColor: "rgba(124,183,255,.1)",
+      borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1,
+    }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
+      responsive: true, maintainAspectRatio: false, animation: false,
       scales: {
         x: { type: "linear", min: 0, max: targetDist, title: { display: true, text: "Дистанция (м)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
         y: { title: { display: true, text: "Высота / Drop (см)", color: "#93a0b5" }, ticks: { color: "#93a0b5" }, grid: { color: "#232a35" } },
@@ -661,23 +739,109 @@ function showLoading(on) {
 }
 
 // =============================================================================
-// Профили: render UI + editor + localStorage persistence
+// Snapshot — сохранение/загрузка текущих входных + результата + режима
 // =============================================================================
+const SNAPSHOT_INPUT_KEYS = [
+  "mass_gr","BC","muzzleV","dragModel","diameter_mm","length_mm","twist","riflingDir","sightHeight",
+  "targetDist","zeroDist","T_C","P_hPa","RH","windV","windClock","latitude","azimuth",
+];
+const SNAPSHOT_CHECKBOX_KEYS = ["useCoriolis","useSpinDrift","useDynamicBC"];
 
+function getCurrentInputs() {
+  const out = {};
+  for (const k of SNAPSHOT_INPUT_KEYS) {
+    const el = document.getElementById(k);
+    if (!el) continue;
+    out[k] = (el.type === "number") ? (parseFloat(el.value) || 0) : el.value;
+  }
+  for (const k of SNAPSHOT_CHECKBOX_KEYS) {
+    const el = document.getElementById(k);
+    if (el) out[k] = !!el.checked;
+  }
+  return out;
+}
+
+function setInputs(inputs) {
+  for (const k of SNAPSHOT_INPUT_KEYS) {
+    if (inputs[k] === undefined) continue;
+    const el = document.getElementById(k);
+    if (el) el.value = inputs[k];
+  }
+  for (const k of SNAPSHOT_CHECKBOX_KEYS) {
+    if (inputs[k] === undefined) continue;
+    const el = document.getElementById(k);
+    if (el) el.checked = !!inputs[k];
+  }
+}
+
+function exportSnapshot() {
+  const inputs = lastInputs || getCurrentInputs();
+  const snap = {
+    schema: "rika-calculator-snapshot/1.0",
+    timestamp: new Date().toISOString(),
+    mode: MODE,
+    pageURL: location.href,
+    inputs,
+    result: lastResult,                 // {mode, SG, sightAngle, final, samples}
+    apiURL: API_URL,
+  };
+  const json = JSON.stringify(snap, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.href = url;
+  a.download = `rika-snapshot-${MODE}-${ts}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importSnapshot(file) {
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const snap = JSON.parse(e.target.result);
+      if (!snap || typeof snap !== "object") throw new Error("Файл повреждён или не JSON-объект");
+      if (!snap.inputs || typeof snap.inputs !== "object") throw new Error("В JSON нет блока 'inputs'");
+
+      setInputs(snap.inputs);
+
+      const notes = [];
+      if (snap.mode && snap.mode !== MODE) {
+        notes.push(`⚠ Снимок сделан в режиме «${snap.mode}», вы сейчас в «${MODE}». Результат может отличаться.`);
+      }
+      if (snap.timestamp) notes.push(`📅 Сохранён: ${new Date(snap.timestamp).toLocaleString()}`);
+      if (snap.schema) notes.push(`🔖 Схема: ${snap.schema}`);
+
+      await compute();
+      alert(`Сценарий загружен ✓\n\n${notes.join("\n") || "(без метаданных)"}`);
+    } catch (err) {
+      alert("Ошибка загрузки сценария: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// =============================================================================
+// Профили: render UI + draft-buffered editor + localStorage persistence
+// =============================================================================
 function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+// Preset bar reflects SAVED state (not draft) — user selects committed profiles.
 function renderPresetBar() {
   const bar = document.querySelector(".preset-bar");
   if (!bar) return;
-  bar.innerHTML = Object.entries(userProfiles).map(([id, p]) =>
+  bar.innerHTML = Object.entries(savedProfiles).map(([id, p]) =>
     `<button class="preset-btn" data-preset="${escapeHtml(id)}">${escapeHtml(p.name || id)}</button>`
   ).join("");
 }
 
 function applyPreset(id) {
-  const p = userProfiles[id];
+  const p = savedProfiles[id];
   if (!p) return;
   const fields = ["dragModel", "BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm", "twist"];
   for (const k of fields) {
@@ -688,32 +852,47 @@ function applyPreset(id) {
   compute();
 }
 
+// Profile editor renders DRAFT state with dirty markers.
 function renderProfileEditor() {
   const list = document.getElementById("profile-list");
   if (!list) return;
-  list.innerHTML = Object.entries(userProfiles).map(([id, p]) => `
-    <div class="profile-card" data-id="${escapeHtml(id)}">
+
+  const validation = validateAllDraft();
+
+  list.innerHTML = Object.entries(draftProfiles).map(([id, p]) => {
+    const dirty = profileDirty(id);
+    const isNew = !savedProfiles[id];
+    const errs = validation[id] || [];
+    const headerBadge = isNew ? '<span class="dirty-badge new">новый</span>' :
+                        dirty  ? '<span class="dirty-badge">изменён</span>' : '';
+
+    return `
+    <div class="profile-card ${dirty ? 'is-dirty' : ''} ${errs.length ? 'is-invalid' : ''}" data-id="${escapeHtml(id)}">
       <div class="profile-card-head">
         <input type="text" class="profile-name" value="${escapeHtml(p.name || id)}" placeholder="Имя профиля" data-key="name">
+        ${headerBadge}
         <div class="profile-card-actions">
-          <button class="dup-btn" title="Дублировать">⎘</button>
-          <button class="del-btn" title="Удалить">✕</button>
+          <button class="dup-btn" type="button" title="Дублировать">⎘</button>
+          <button class="del-btn" type="button" title="Удалить">✕</button>
         </div>
       </div>
       <div class="profile-fields">
         <label>Drag<select data-key="dragModel">
-          ${["G1","G2","G5","G6","G7","G8"].map(m => `<option value="${m}" ${p.dragModel === m ? "selected" : ""}>${m}</option>`).join("")}
+          ${DRAG_MODELS.map(m => `<option value="${m}" ${p.dragModel === m ? "selected" : ""}>${m}</option>`).join("")}
         </select></label>
-        <label>BC<input type="number" data-key="BC" value="${p.BC}" step="0.001" min="0.05" max="2"></label>
-        <label>MV, м/с<input type="number" data-key="muzzleV" value="${p.muzzleV}" step="1" min="100" max="1500"></label>
-        <label>Масса, gr<input type="number" data-key="mass_gr" value="${p.mass_gr}" step="1" min="20" max="900"></label>
-        <label>Диам., мм<input type="number" data-key="diameter_mm" value="${p.diameter_mm}" step="0.01" min="4" max="15"></label>
-        <label>Длина, мм<input type="number" data-key="length_mm" value="${p.length_mm}" step="0.1" min="10" max="60"></label>
-        <label>Твист, дюйм<input type="number" data-key="twist" value="${p.twist}" step="0.05" min="5" max="20"></label>
+        <label>BC<input type="number" data-key="BC" value="${p.BC ?? ''}" step="0.001" min="${FIELD_RANGES.BC.min}" max="${FIELD_RANGES.BC.max}"></label>
+        <label>MV, м/с<input type="number" data-key="muzzleV" value="${p.muzzleV ?? ''}" step="1" min="${FIELD_RANGES.muzzleV.min}" max="${FIELD_RANGES.muzzleV.max}"></label>
+        <label>Масса, gr<input type="number" data-key="mass_gr" value="${p.mass_gr ?? ''}" step="1" min="${FIELD_RANGES.mass_gr.min}" max="${FIELD_RANGES.mass_gr.max}"></label>
+        <label>Диам., мм<input type="number" data-key="diameter_mm" value="${p.diameter_mm ?? ''}" step="0.01" min="${FIELD_RANGES.diameter_mm.min}" max="${FIELD_RANGES.diameter_mm.max}"></label>
+        <label>Длина, мм<input type="number" data-key="length_mm" value="${p.length_mm ?? ''}" step="0.1" min="${FIELD_RANGES.length_mm.min}" max="${FIELD_RANGES.length_mm.max}"></label>
+        <label>Твист, дюйм<input type="number" data-key="twist" value="${p.twist ?? ''}" step="0.05" min="${FIELD_RANGES.twist.min}" max="${FIELD_RANGES.twist.max}"></label>
       </div>
-    </div>
-  `).join("");
+      ${errs.length ? `<div class="profile-errors">${errs.map(e => `<div>• ${escapeHtml(e)}</div>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
+
   bindEditorEvents();
+  updateSaveBar();
 }
 
 function bindEditorEvents() {
@@ -723,51 +902,102 @@ function bindEditorEvents() {
       input.addEventListener("input", e => {
         const key = e.target.dataset.key;
         const raw = e.target.value;
-        userProfiles[id][key] = (e.target.type === "number") ? (parseFloat(raw) || 0) : raw;
-        saveProfiles();
-        if (key === "name") renderPresetBar();
+        if (e.target.type === "number") {
+          draftProfiles[id][key] = raw === "" ? NaN : parseFloat(raw);
+        } else {
+          draftProfiles[id][key] = raw;
+        }
+        renderProfileEditor();   // re-render to update dirty markers + validation
       });
     });
     card.querySelector(".dup-btn").addEventListener("click", () => {
       const newId = id + "_copy_" + Date.now();
-      userProfiles[newId] = { ...userProfiles[id], name: (userProfiles[id].name || id) + " (копия)" };
-      saveProfiles();
-      renderPresetBar();
+      draftProfiles[newId] = { ...draftProfiles[id], name: (draftProfiles[id].name || id) + " (копия)" };
       renderProfileEditor();
     });
     card.querySelector(".del-btn").addEventListener("click", () => {
-      if (Object.keys(userProfiles).length <= 1) { alert("Нельзя удалить последний профиль."); return; }
-      if (!confirm(`Удалить «${userProfiles[id].name || id}»?`)) return;
-      delete userProfiles[id];
-      saveProfiles();
-      renderPresetBar();
+      if (Object.keys(draftProfiles).length <= 1) { alert("Нельзя удалить последний профиль."); return; }
+      if (!confirm(`Удалить «${draftProfiles[id].name || id}»? Изменение применится после Сохранения.`)) return;
+      delete draftProfiles[id];
       renderProfileEditor();
     });
   });
 }
 
-function addProfile() {
+function updateSaveBar() {
+  const bar = document.getElementById("save-bar");
+  if (!bar) return;
+  const dirty = isDirty();
+  bar.style.display = dirty ? "flex" : "none";
+  if (dirty) {
+    const summary = computeDirtySummary();
+    const errs = validateAllDraft();
+    const errCount = Object.keys(errs).length;
+    const saveBtn = document.getElementById("save-profiles-btn");
+    const status = document.getElementById("save-bar-status");
+    if (status) status.textContent = errCount
+      ? `${summary} · ${errCount} ${errCount === 1 ? "профиль с ошибками" : "профилей с ошибками"}`
+      : summary;
+    if (saveBtn) {
+      saveBtn.disabled = errCount > 0;
+      saveBtn.title = errCount > 0 ? "Исправьте ошибки чтобы сохранить" : "";
+    }
+  }
+}
+
+function computeDirtySummary() {
+  let modified = 0, added = 0, removed = 0;
+  for (const id of Object.keys(draftProfiles)) {
+    if (!savedProfiles[id]) added++;
+    else if (profileDirty(id)) modified++;
+  }
+  for (const id of Object.keys(savedProfiles)) {
+    if (!draftProfiles[id]) removed++;
+  }
+  const parts = [];
+  if (modified) parts.push(`изменено: ${modified}`);
+  if (added) parts.push(`добавлено: ${added}`);
+  if (removed) parts.push(`удалено: ${removed}`);
+  return "Несохранённые изменения · " + (parts.join(", ") || "—");
+}
+
+function saveDraft() {
+  const errs = validateAllDraft();
+  if (Object.keys(errs).length > 0) {
+    alert("Есть ошибки валидации. Исправьте подсвеченные поля.");
+    return;
+  }
+  savedProfiles = clone(draftProfiles);
+  persistSavedProfiles();
+  renderPresetBar();
+  renderProfileEditor();   // dirty badges should disappear
+}
+
+function discardDraft() {
+  if (!isDirty()) return;
+  if (!confirm("Отменить все несохранённые изменения и вернуться к сохранённому состоянию?")) return;
+  draftProfiles = clone(savedProfiles);
+  renderProfileEditor();
+}
+
+function addProfileDraft() {
   const newId = "custom_" + Date.now();
-  userProfiles[newId] = {
+  draftProfiles[newId] = {
     name: "Новый профиль", dragModel: "G7",
     BC: 0.250, muzzleV: 800, mass_gr: 150,
     diameter_mm: 7.62, length_mm: 30.0, twist: 10.0,
   };
-  saveProfiles();
-  renderPresetBar();
   renderProfileEditor();
 }
 
-function resetProfiles() {
-  if (!confirm("Сбросить все профили к дефолтным? Кастомные будут потеряны.")) return;
-  userProfiles = JSON.parse(JSON.stringify(DEFAULT_PROFILES));
-  saveProfiles();
-  renderPresetBar();
+function resetToDefaultsDraft() {
+  if (!confirm("Заменить все профили в редакторе на дефолтные? (Сохранения пока не произойдёт — нужно нажать «Сохранить»)")) return;
+  draftProfiles = clone(DEFAULT_PROFILES);
   renderProfileEditor();
 }
 
-function exportProfiles() {
-  const json = JSON.stringify(userProfiles, null, 2);
+function exportSavedProfiles() {
+  const json = JSON.stringify(savedProfiles, null, 2);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -777,7 +1007,7 @@ function exportProfiles() {
   URL.revokeObjectURL(url);
 }
 
-function importProfiles(file) {
+function importProfilesIntoDraft(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -786,15 +1016,12 @@ function importProfiles(file) {
       if (Object.keys(data).length === 0) throw new Error("Файл пустой");
       for (const [id, p] of Object.entries(data)) {
         if (!p || typeof p !== "object") throw new Error(`Профиль ${id} не объект`);
-        for (const k of ["BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm", "twist"]) {
-          if (typeof p[k] !== "number" || !isFinite(p[k])) throw new Error(`${id}.${k}: ожидалось число, получено ${typeof p[k]}`);
-        }
+        const errs = validateProfile(p);
+        if (errs.length > 0) throw new Error(`${id}: ${errs.join(', ')}`);
       }
-      userProfiles = data;
-      saveProfiles();
-      renderPresetBar();
+      draftProfiles = data;
       renderProfileEditor();
-      alert(`Импортировано ${Object.keys(data).length} профилей.`);
+      alert(`Импортировано ${Object.keys(data).length} профилей в черновик. Нажмите «Сохранить» чтобы применить.`);
     } catch (err) {
       alert("Ошибка импорта: " + err.message);
     }
@@ -802,40 +1029,75 @@ function importProfiles(file) {
   reader.readAsText(file);
 }
 
-// Initial render of dynamic preset bar
+// =============================================================================
+// Wiring
+// =============================================================================
 renderPresetBar();
 renderProfileEditor();
 
-// Delegated click handler for preset buttons (renderPresetBar replaces the children)
+// Preset bar — delegated click handler
 document.querySelector(".preset-bar")?.addEventListener("click", e => {
   const btn = e.target.closest(".preset-btn");
   if (btn) applyPreset(btn.dataset.preset);
 });
 
 // Editor toolbar
-document.getElementById("add-profile-btn")?.addEventListener("click", addProfile);
-document.getElementById("reset-profiles-btn")?.addEventListener("click", resetProfiles);
-document.getElementById("export-profiles-btn")?.addEventListener("click", exportProfiles);
+document.getElementById("add-profile-btn")?.addEventListener("click", addProfileDraft);
+document.getElementById("reset-profiles-btn")?.addEventListener("click", resetToDefaultsDraft);
+document.getElementById("export-profiles-btn")?.addEventListener("click", exportSavedProfiles);
 document.getElementById("import-profiles-btn")?.addEventListener("click", () => document.getElementById("import-profiles-file").click());
 document.getElementById("import-profiles-file")?.addEventListener("change", e => {
   const file = e.target.files[0];
-  if (file) importProfiles(file);
+  if (file) importProfilesIntoDraft(file);
   e.target.value = "";
 });
 
-// Debounced recalc on input changes
+// Save bar
+document.getElementById("save-profiles-btn")?.addEventListener("click", saveDraft);
+document.getElementById("discard-profiles-btn")?.addEventListener("click", discardDraft);
+
+// Snapshot
+document.getElementById("export-snapshot-btn")?.addEventListener("click", exportSnapshot);
+document.getElementById("import-snapshot-btn")?.addEventListener("click", () => document.getElementById("import-snapshot-file").click());
+document.getElementById("import-snapshot-file")?.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) importSnapshot(file);
+  e.target.value = "";
+});
+
+// Cmd/Ctrl+S to save when editor is open and dirty
+document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+    if (isDirty()) {
+      e.preventDefault();
+      saveDraft();
+    }
+  } else if (e.key === "Escape") {
+    if (isDirty() && document.activeElement?.closest(".profile-editor")) {
+      discardDraft();
+    }
+  }
+});
+
+// Warn before navigating away with unsaved changes
+window.addEventListener("beforeunload", e => {
+  if (isDirty()) {
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  }
+});
+
+// Debounced recalc on main form changes
 let debounceTimer = null;
 const DEBOUNCE_MS = 350;
 document.querySelectorAll(".inputs input, .inputs select").forEach(el => {
-  const trigger = () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(compute, DEBOUNCE_MS);
-  };
+  if (el.closest(".profile-editor")) return;   // editor inputs do NOT trigger ballistic recompute
+  const trigger = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(compute, DEBOUNCE_MS); };
   el.addEventListener("input", trigger);
   el.addEventListener("change", trigger);
 });
 
-// Initial compute
 compute();
 </script>
 </body>
