@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:8cde857
+
+_Published 2026-05-24 15:09 UTC from `shah1git/rika-firmware@8cde857`_
+
+- `8cde857` calc-corrected: BUG-010 перенесён в «Другие баги, не относящиеся к calc» [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:ec0b5fe
 
 _Published 2026-05-24 15:00 UTC from `shah1git/rika-firmware@ec0b5fe`_
