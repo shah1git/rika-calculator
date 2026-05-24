@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:86bfc56
+
+_Published 2026-05-24 15:16 UTC from `shah1git/rika-firmware@86bfc56`_
+
+- `86bfc56` calc-corrected: BUG-003 FIX — Kelvin offset 273 → 273.15 в soundVelocity [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:8cde857
 
 _Published 2026-05-24 15:09 UTC from `shah1git/rika-firmware@8cde857`_

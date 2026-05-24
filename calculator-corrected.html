@@ -427,6 +427,16 @@ tr.zero td { background: rgba(126,226,168,.08); }
         </div>
       </details>
 
+      <details style="margin-bottom: 10px;">
+        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">🟢 BUG-003 — В формуле скорости звука использовался 273 вместо 273,15 для перевода Цельсия в Кельвин <span style="background:#2d6a2d; color:#cffccf; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">✅ ИСПРАВЛЕНО</span></summary>
+        <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
+          <p><b>В чём суть.</b> Скорость пули в полёте сравнивается со скоростью звука — получается число Маха, которое определяет коэффициент сопротивления (drag). Скорость звука зависит от температуры по формуле <code>c = 331 · √(T_K / T₀)</code>, где <code>T₀ = 273,15 K</code> (точка таяния льда, 0°C).</p>
+          <p><b>В чём ошибка прошивки.</b> Программист OEM записал <code>T₀ = 273</code> вместо <code>273,15</code>. Это даёт ошибку в скорости звука <b>около 0,03%</b> — крошечная, ниже точности измерения температуры воздуха (типичный термометр прибора имеет точность ±1°C, что само по себе создаёт ~0,2% неопределённости в скорости звука).</p>
+          <p><b>Что это значит для стрелка.</b> На практику стрельбы влияние почти нулевое — ошибка в Маха ~0,0003, что меняет Cd на десятые доли процента, что меняет drop на миллиметры на 1000 м. Не различимо в шуме других факторов.</p>
+          <p><b>Как мы исправили.</b> В обеих наших функциях скорости звука (<code>soundVelocity</code> и <code>lesnik_CalculateSoundVelocity</code>) теперь используется <code>KELVIN_OFFSET = 273,15</code> вместо <code>273</code>. Изменение чисто косметическое — числа в HUD сдвинулись на ~миллиметры на 1000 м. Mirror-калькулятор (<code>calculator.html</code>) сохраняет firmware-форму с 273,0 для байт-в-байт сверки с прибором.</p>
+        </div>
+      </details>
+
       <details style="margin-bottom: 10px; padding: 12px; background: rgba(80,60,40,0.15); border-left: 3px solid #aa8844; border-radius: 4px;">
         <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">🔁 BUG-009 — Запутывающая формула drag (formula refactor) <span style="background:#2d6a2d; color:#cffccf; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">✅ ИСПРАВЛЕНО</span></summary>
         <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
@@ -483,7 +493,6 @@ tr.zero td { background: rgba(126,226,168,.08); }
         <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
           <p>Эти баги существуют в прошивке прибора, но в нашем JS-калькуляторе физически не могут проявиться — либо потому что у калькулятора другая архитектура, либо потому что у нас нет соответствующего «железа» (датчиков, парсера ввода и т.д.).</p>
           <ul style="padding-left: 20px;">
-            <li style="margin-bottom: 8px;"><b>BUG-003</b> 🟢 — В формуле скорости звука прошивка использует значение 273,0 вместо корректного 273,15 для перевода Цельсия в Кельвин. Ошибка около 0,05% — ниже шума измерений температуры. В обоих наших калькуляторах формула унаследована из прошивки и не поправлена; можем сделать это отдельной задачей.</li>
             <li style="margin-bottom: 8px;"><b>BUG-005</b> 🟡 — В прошивке есть упрощённый метод поправки на угол наклона ствола (так называемое <i>«правило стрелка»</i>) — он не учитывает один косинус в формуле. Этот баг живёт в UI-слое прошивки, выше уровня баллистики. Наш калькулятор моделирует наклон через полное 3D разложение скорости пули — там этот баг архитектурно невозможен.</li>
             <li style="margin-bottom: 8px;"><b>BUG-007</b> 🟡 — Внутренняя ошибка прошивки в переключении между двумя путями расчёта бокового сноса. У калькулятора есть только один путь расчёта, нет конкурирующих веток — баг не воспроизводится.</li>
             <li style="margin-bottom: 8px;"><b>BUG-010</b> 🔴 — В прошивке (функция <code>zs_GuiSpecParamTrajectory_ParamCheck</code>) есть кламп: если BC &lt; 0,001, прибор тихо подменяет на 0,001. Это и дефолтное значение при заводском сбросе. Физически 0,001 даёт абсурдную баллистику (drag в 500-1000× нормы). У нашего JS-калькулятора нет такого санитайзера — пользователь сам вводит BC, и видит реальные числа в результате. Это особенность прошивки, не воспроизводится в веб-калькуляторе. Тот же паттерн найден в Ovod-прошивке как OVOD-BUG-001 (ломает overlay-окошко PiP).</li>
@@ -695,8 +704,10 @@ function airDensity(T_C, P_Pa, RH_pct) {
 }
 
 function soundVelocity(T_C) {
-    // c = 331 · √(T_K / 273) — exact form from ZS_TrajectoryCalculateSoundVelocity
-    return 331.0 * Math.sqrt((T_C + KELVIN_OFFSET) / 273);
+    // c = 331 · √(T_K / T₀), где T₀ = 273.15 K (точка 0°C)
+    // BUG-003 FIX: прошивка делила на 273 (не 273.15), даёт ошибку ~0.05% —
+    // ниже шума измерений температуры, но устраняем для корректности.
+    return 331.0 * Math.sqrt((T_C + KELVIN_OFFSET) / KELVIN_OFFSET);
 }
 
 // ===================================================================
@@ -1019,7 +1030,9 @@ function lesnik_CalculateDensity(T_K, P_Pa, RH_frac) {
 // ZS_TrajectoryCalculateSoundVelocity(T_K) → m/s
 // ============================================================================
 function lesnik_CalculateSoundVelocity(T_K) {
-  return Math.sqrt(T_K / 273.0) * 331.0;
+  // BUG-003 FIX: прошивка делит на 273.0 (не 273.15), даёт ошибку ~0.05%.
+  // Mirror (calculator.html) сохраняет firmware-форму; здесь corrected.
+  return Math.sqrt(T_K / LSC.KELVIN_C_OFFSET) * 331.0;
 }
 
 // ============================================================================
@@ -2142,11 +2155,17 @@ compute();
   font-size:11px;}
 </style>
 <div id="rcv-banner">
-  <span class="v">v2026-05-24 · r:8cde857</span>
+  <span class="v">v2026-05-24 · r:86bfc56</span>
   <span class="sep">·</span> <button onclick="var c=document.getElementById('rcv-changelog');c.style.display=c.style.display==='block'?'none':'block';">changelog</button>
   <span class="sep">·</span> <a href="https://github.com/shah1git/rika-firmware" target="_blank" rel="noopener">source</a>
 </div>
 <div id="rcv-changelog"><h1>Changelog</h1>
+
+<h2>v2026-05-24 · r:86bfc56</h2>
+
+_Published 2026-05-24 15:16 UTC from <code>shah1git/rika-firmware@86bfc56</code>_
+
+- <code>86bfc56</code> calc-corrected: BUG-003 FIX — Kelvin offset 273 → 273.15 в soundVelocity [sync] _(shah1git, 0 seconds ago)_
 
 <h2>v2026-05-24 · r:8cde857</h2>
 
