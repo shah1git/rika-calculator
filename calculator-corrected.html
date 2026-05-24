@@ -282,7 +282,13 @@ tr.zero td { background: rgba(126,226,168,.08); }
       <button class="preset-btn" data-preset="338_300smk">.338 300gr SMK</button>
       <button class="preset-btn" data-preset="65cm_140eldm">6.5CM 140gr ELD-M</button>
       <button class="preset-btn" data-preset="223_77smk">.223 77gr SMK</button>
+      <span style="border-left:1px solid #444; margin:0 4px; padding-left:8px;">
+        <button class="preset-btn" id="importStrelokBtn" title="Импорт входных параметров из CSV-экспорта СтрелокPro Игоря Борисова">📥 Импорт CSV</button>
+        <button class="preset-btn" id="saveProfileBtn" title="Сохранить текущие параметры как новый профиль (хранится в браузере)">💾 Сохранить профиль</button>
+        <input type="file" id="csvFileInput" accept=".csv,.cvs,.txt" style="display:none">
+      </span>
     </div>
+    <div class="preset-bar" id="userPresetsBar" style="margin-top:6px;"></div>
 
     <h3>Цель</h3>
     <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10"></div>
@@ -1879,17 +1885,234 @@ const PRESETS = {
     },
 };
 
-document.querySelectorAll(".preset-btn").forEach(btn => {
+// =============================================================================
+// Preset / user-profile / CSV-import system
+// =============================================================================
+
+// Поля которые входят в profile snapshot. Включают все ballistic inputs +
+// атмосфера + ветер + геометрия. Контролы (checkboxes) — отдельно.
+const PROFILE_FIELDS = [
+    "dragModel", "BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm",
+    "twist", "zeroDist", "sightHeight",
+    "T_C", "P_hPa", "RH",
+    "windV", "windClock",
+    "latitude", "azimuth", "targetDist",
+];
+const PROFILE_FLAGS = ["useSpinDrift", "useCoriolis", "useDynamicBC", "useDriftFix"];
+const USER_PROFILES_KEY = "rcv-user-profiles-v1";
+
+function applyPreset(preset) {
+    for (const [k, v] of Object.entries(preset.fields || preset)) {
+        const el = document.getElementById(k);
+        if (el && v !== undefined && v !== null) el.value = v;
+    }
+    if (preset.flags) {
+        for (const [k, v] of Object.entries(preset.flags)) {
+            const el = document.getElementById(k);
+            if (el && el.type === "checkbox") el.checked = !!v;
+        }
+    }
+    compute();
+}
+
+document.querySelectorAll(".preset-btn[data-preset]").forEach(btn => {
     btn.addEventListener("click", () => {
         const p = PRESETS[btn.dataset.preset];
-        if (!p) return;
-        for (const [k, v] of Object.entries(p)) {
-            const el = document.getElementById(k);
-            if (el) el.value = v;
-        }
-        compute();
+        if (p) applyPreset(p);
     });
 });
+
+// ---- User profiles (localStorage) ----
+function loadUserProfiles() {
+    try {
+        return JSON.parse(localStorage.getItem(USER_PROFILES_KEY) || "{}");
+    } catch (e) { return {}; }
+}
+function saveUserProfiles(profiles) {
+    localStorage.setItem(USER_PROFILES_KEY, JSON.stringify(profiles));
+}
+function snapshotCurrent() {
+    const fields = {};
+    for (const id of PROFILE_FIELDS) {
+        const el = document.getElementById(id);
+        if (el) fields[id] = el.value;
+    }
+    const flags = {};
+    for (const id of PROFILE_FLAGS) {
+        const el = document.getElementById(id);
+        if (el && el.type === "checkbox") flags[id] = el.checked;
+    }
+    return { fields, flags };
+}
+function renderUserProfiles() {
+    const bar = document.getElementById("userPresetsBar");
+    if (!bar) return;
+    bar.innerHTML = "";
+    const profiles = loadUserProfiles();
+    const names = Object.keys(profiles);
+    if (names.length === 0) {
+        bar.style.display = "none";
+        return;
+    }
+    bar.style.display = "";
+    for (const name of names) {
+        const btn = document.createElement("button");
+        btn.className = "preset-btn";
+        btn.textContent = "👤 " + name;
+        btn.title = "Загрузить сохранённый профиль (правый клик — удалить)";
+        btn.addEventListener("click", () => applyPreset(profiles[name]));
+        btn.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            if (confirm(`Удалить профиль «${name}»?`)) {
+                const p = loadUserProfiles();
+                delete p[name];
+                saveUserProfiles(p);
+                renderUserProfiles();
+            }
+        });
+        bar.appendChild(btn);
+    }
+}
+
+document.getElementById("saveProfileBtn").addEventListener("click", () => {
+    const name = prompt("Название профиля:", "");
+    if (!name) return;
+    const profiles = loadUserProfiles();
+    if (profiles[name] && !confirm(`Профиль «${name}» уже есть. Перезаписать?`)) return;
+    profiles[name] = snapshotCurrent();
+    saveUserProfiles(profiles);
+    renderUserProfiles();
+});
+
+// ---- CSV import (СтрелокPro export format) ----
+//
+// Format header (15 lines, key:value;):
+//   Скорость пули, м/с: 828.2857;
+//   Баллистический коэффициент: ... ;
+//   Фактор гироскопической стабильности: 1.81;
+//   Режим добавления деривации в результирующие поправки: Включен;
+//   ... и т.д.
+//
+// Десятичный разделитель в header: `.` ; в таблице траектории: `,`.
+// Encoding: UTF-8 with BOM.
+//
+// Mapping CSV → наши поля. Поля без аналогов пропускаются (BC «не используется»,
+// фактор стабильности, MOA-клики, верт.ветер, абсолютные снижения).
+function parseStrelokCSV(text) {
+    text = text.replace(/^﻿/, "");  // strip BOM
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+    const fields = {};
+    const flags = {};
+    const log = [];
+
+    for (const line of lines) {
+        if (line.startsWith("Дистанция, метры")) break;  // start of trajectory table
+        const m = line.match(/^([^:]+):\s*(.+?);?\s*$/);
+        if (!m) continue;
+        const key = m[1].trim();
+        const val = m[2].trim();
+        switch (key) {
+            case "Скорость пули, м/с":
+                fields.muzzleV = parseFloat(val); log.push(`muzzleV = ${fields.muzzleV}`); break;
+            case "Дистанция пристрелки, м":
+                fields.zeroDist = parseFloat(val); log.push(`zeroDist = ${fields.zeroDist}`); break;
+            case "Высота прицела, см":
+                fields.sightHeight = Math.round(parseFloat(val) * 10);  // см → мм
+                log.push(`sightHeight = ${fields.sightHeight} мм (из ${val} см)`); break;
+            case "Температура, °C":
+                fields.T_C = parseFloat(val); log.push(`T_C = ${fields.T_C}`); break;
+            case "Давление, hPa (mb)":
+            case "Давление, hPa":
+                fields.P_hPa = parseFloat(val); log.push(`P_hPa = ${fields.P_hPa}`); break;
+            case "Влажность, %":
+                fields.RH = parseFloat(val); log.push(`RH = ${fields.RH}`); break;
+            case "Скорость ветра, м/с":
+                fields.windV = parseFloat(val); log.push(`windV = ${fields.windV}`); break;
+            case "Направление ветра, градусы": {
+                // 0/360°=в спину=12ч, 90°=справа=3ч, 180°=в лицо=6ч, 270°=слева=9ч
+                const deg = parseFloat(val);
+                let h = Math.round((deg / 30) * 2) / 2;
+                if (h === 0) h = 12;
+                if (h > 12) h = h - 12;
+                fields.windClock = h;
+                log.push(`windClock = ${h} (из ${deg}°)`);
+                break;
+            }
+            case "Драг-функция": {
+                let m;
+                if (val.includes("G7")) fields.dragModel = "G7";
+                else if (val.includes("G1")) fields.dragModel = "G1";
+                else if (val.includes("G2")) fields.dragModel = "G2";
+                else if (val.includes("G5")) fields.dragModel = "G5";
+                else if (val.includes("G6")) fields.dragModel = "G6";
+                else if (val.includes("G8")) fields.dragModel = "G8";
+                log.push(`dragModel = ${fields.dragModel || "?"} (из «${val}»)`);
+                // "Множ. БК" → multi-BC active in source; нашу dynamic BC включим
+                if (val.includes("Множ")) flags.useDynamicBC = true;
+                break;
+            }
+            case "Режим добавления деривации в результирующие поправки":
+                flags.useSpinDrift = val.includes("Включен");
+                log.push(`useSpinDrift = ${flags.useSpinDrift}`); break;
+            case "Баллистический коэффициент":
+                if (val.includes("не используется")) {
+                    log.push("BC: «не используется» — поле оставлено как есть (multi-BC режим)");
+                } else {
+                    const bc = parseFloat(val);
+                    if (!isNaN(bc) && bc > 0) {
+                        fields.BC = bc;
+                        log.push(`BC = ${bc}`);
+                    }
+                }
+                break;
+            // Игнорируемые поля (нет аналога в нашем калькуляторе):
+            case "Фактор гироскопической стабильности":
+            case "Режим добавления вертикального ветрового сноса в результирующие поправки":
+            case "Верт. клик, MOA":
+            case "Гор. клик, MOA":
+                log.push(`(ignored: ${key})`);
+                break;
+            default:
+                log.push(`(unknown key: ${key})`);
+        }
+    }
+    return { fields, flags, log };
+}
+
+document.getElementById("importStrelokBtn").addEventListener("click", () => {
+    document.getElementById("csvFileInput").click();
+});
+
+document.getElementById("csvFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const parsed = parseStrelokCSV(ev.target.result);
+            applyPreset(parsed);
+            const summary = parsed.log.join("\n");
+            const filled = Object.keys(parsed.fields).length + Object.keys(parsed.flags).length;
+            const msg = `✓ Импортировано ${filled} параметров из ${file.name}\n\n${summary}\n\nСохранить как профиль для повторного использования?`;
+            if (confirm(msg)) {
+                const name = prompt("Название профиля:", file.name.replace(/\.(cvs|csv|txt)$/i, ""));
+                if (name) {
+                    const profiles = loadUserProfiles();
+                    profiles[name] = { fields: parsed.fields, flags: parsed.flags };
+                    saveUserProfiles(profiles);
+                    renderUserProfiles();
+                }
+            }
+        } catch (err) {
+            alert("Ошибка парсинга CSV: " + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";  // allow re-import of same file
+});
+
+renderUserProfiles();
 
 // Live recalc on any input change
 document.querySelectorAll(".inputs input, .inputs select").forEach(el => {
@@ -1922,11 +2145,17 @@ compute();
   font-size:11px;}
 </style>
 <div id="rcv-banner">
-  <span class="v">v2026-05-24 · r:4b8a533</span>
+  <span class="v">v2026-05-24 · r:e95dc1c</span>
   <span class="sep">·</span> <button onclick="var c=document.getElementById('rcv-changelog');c.style.display=c.style.display==='block'?'none':'block';">changelog</button>
   <span class="sep">·</span> <a href="https://github.com/shah1git/rika-firmware" target="_blank" rel="noopener">source</a>
 </div>
 <div id="rcv-changelog"><h1>Changelog</h1>
+
+<h2>v2026-05-24 · r:e95dc1c</h2>
+
+_Published 2026-05-24 14:48 UTC from <code>shah1git/rika-firmware@e95dc1c</code>_
+
+- <code>e95dc1c</code> calc-corrected: импорт CSV из СтрелокPro + user-profiles в localStorage [sync] _(shah1git, 0 seconds ago)_
 
 <h2>v2026-05-24 · r:4b8a533</h2>
 

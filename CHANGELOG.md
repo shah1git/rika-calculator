@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:e95dc1c
+
+_Published 2026-05-24 14:48 UTC from `shah1git/rika-firmware@e95dc1c`_
+
+- `e95dc1c` calc-corrected: импорт CSV из СтрелокPro + user-profiles в localStorage [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:4b8a533
 
 _Published 2026-05-24 14:23 UTC from `shah1git/rika-firmware@4b8a533`_
