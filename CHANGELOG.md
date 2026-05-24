@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:b9021b9
+
+_Published 2026-05-24 14:58 UTC from `shah1git/rika-firmware@b9021b9`_
+
+- `b9021b9` calc-corrected: визуально выделил BUG-009 update — badge + цветной блок [sync] _(shah1git, 1 second ago)_
+
 ## v2026-05-24 · r:3229055
 
 _Published 2026-05-24 14:50 UTC from `shah1git/rika-firmware@3229055`_
