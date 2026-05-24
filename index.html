@@ -40,9 +40,12 @@
     }
     .cards {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin: 32px 0;
+    }
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 600px) {
       .cards { grid-template-columns: 1fr; }
@@ -63,8 +66,10 @@
     }
     .card.firmware { border-left: 4px solid var(--accent-red); }
     .card.corrected { border-left: 4px solid var(--accent-green); }
-    .card.firmware:hover { border-color: var(--accent-red); }
+    .card.reticle  { border-left: 4px solid #ffb86c; }
+    .card.firmware:hover  { border-color: var(--accent-red); }
     .card.corrected:hover { border-color: var(--accent-green); }
+    .card.reticle:hover   { border-color: #ffb86c; }
     .card-title {
       font-size: 18px;
       font-weight: 700;
@@ -86,6 +91,7 @@
       color: var(--accent-green);
     }
     .card.firmware .card-link { color: var(--accent-red); }
+    .card.reticle  .card-link { color: #ffb86c; }
     .section {
       background: var(--card-bg);
       border-radius: 8px;
@@ -141,6 +147,15 @@
           Та же модель, но с исправлениями четырёх найденных багов прошивки. Добавлены поля длины и диаметра пули (которых нет в OEM-UI). Внутри страницы — подробное описание каждого исправления простым языком.
         </div>
         <div class="card-link">Открыть corrected →</div>
+      </a>
+
+      <a class="card reticle" href="reticle-emulator.html">
+        <div class="card-title">🎯 Эмулятор reticle</div>
+        <div class="card-sub">прицельная сетка с D1–D5 hash marks</div>
+        <div class="card-desc">
+          Визуализация того, как выглядит прицельная сетка для пяти выбранных дистанций (например, 100/300/500/700/1000 м). Полная баллистика (drop + ветер + Кориолис + деривация) — на сервере, режим <code>corrected</code>. Hover на метку — подробная раскладка по составляющим.
+        </div>
+        <div class="card-link">Открыть эмулятор →</div>
       </a>
     </div>
 

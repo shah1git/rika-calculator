@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lesnik · Эмулятор прицельной сетки</title>
+<style>
+:root {
+  --bg: #0e1116;
+  --bg-side: #14181f;
+  --bg-card: #181c24;
+  --bg-input: #1d2330;
+  --fg: #d6dde6;
+  --fg-dim: #93a0b5;
+  --accent: #7cb7ff;
+  --accent2: #ffb86c;
+  --good: #7ee2a8;
+  --bad: #ff7373;
+  --rule: #232a35;
+  --reticle: #7ee2a8;
+  --reticle-dim: #3a5b48;
+  --hash: #ffb86c;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px; line-height: 1.5;
+}
+body { display: flex; min-height: 100vh; }
+header {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: var(--bg-side); border-bottom: 1px solid var(--rule);
+  padding: 8px 24px; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header .title { font-size: 16px; color: var(--accent); font-weight: 600; }
+header .sub { font-size: 12px; color: var(--fg-dim); }
+header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+header a:hover { text-decoration: underline; }
+
+main { display: flex; width: 100%; margin-top: 48px; }
+
+/* Sidebar */
+.inputs {
+  flex: 0 0 360px;
+  background: var(--bg-side);
+  border-right: 1px solid var(--rule);
+  padding: 20px 18px;
+  overflow-y: auto;
+  height: calc(100vh - 48px);
+  position: sticky; top: 48px;
+}
+.inputs h3 {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--accent2);
+  margin: 18px 0 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--rule);
+}
+.inputs h3:first-of-type { margin-top: 0; }
+.field {
+  display: grid; grid-template-columns: 1fr 90px;
+  gap: 10px; align-items: center;
+  padding: 5px 0;
+}
+.field label { font-size: 13px; color: var(--fg); }
+.field .unit { font-size: 11px; color: var(--fg-dim); }
+.field input[type="number"], .field select {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--fg);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px; text-align: right;
+}
+.field select { text-align: left; }
+.field input[type="number"]:focus, .field select:focus {
+  outline: none; border-color: var(--accent);
+}
+.toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px; cursor: pointer; border-radius: 4px;
+}
+.toggle:hover { background: var(--bg-card); }
+.toggle input[type="checkbox"] { margin: 0; accent-color: var(--accent); }
+
+.preset-bar {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 8px 0 4px;
+}
+.preset-btn {
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--fg-dim);
+  cursor: pointer; font-size: 12px;
+  font-family: inherit;
+}
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.active { border-color: var(--accent2); color: var(--accent2); }
+
+/* FOV slider row */
+.slider-row {
+  display: grid; grid-template-columns: 1fr 60px;
+  gap: 10px; align-items: center;
+  padding: 6px 0;
+}
+.slider-row input[type="range"] { width: 100%; accent-color: var(--accent2); }
+.slider-row .val {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px; color: var(--accent2);
+  text-align: right;
+}
+
+/* Distance grid */
+.dist-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+.dist-grid .col { display: flex; flex-direction: column; gap: 3px; }
+.dist-grid .col label {
+  font-size: 10px; color: var(--fg-dim);
+  text-align: center; letter-spacing: .5px;
+}
+.dist-grid .col input {
+  width: 100%;
+  padding: 4px 2px;
+  background: var(--bg-input);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--fg);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px; text-align: center;
+}
+
+/* Main canvas area */
+.canvas-area {
+  flex: 1;
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+}
+.canvas-area h2 {
+  font-size: 16px; font-weight: 600;
+  color: var(--accent2);
+  margin: 0 0 12px;
+  letter-spacing: .3px;
+  align-self: flex-start;
+}
+.svg-wrap {
+  position: relative;
+  width: min(620px, 100%);
+  aspect-ratio: 1 / 1;
+  background: #07090d;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+#reticleSvg {
+  display: block;
+  width: 100%; height: 100%;
+}
+#reticleSvg .axis { stroke: var(--reticle); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+#reticleSvg .grid  { stroke: var(--reticle-dim); stroke-width: 0.8px; vector-effect: non-scaling-stroke; }
+#reticleSvg .tick  { stroke: var(--reticle); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+#reticleSvg .center { fill: var(--reticle); }
+#reticleSvg .label { fill: var(--reticle-dim); font-family: "SF Mono", Menlo, monospace; font-weight: 500; }
+#reticleSvg .hash-line { stroke: var(--hash); stroke-width: 1.6px; vector-effect: non-scaling-stroke; }
+#reticleSvg .hash-dot { fill: var(--hash); }
+#reticleSvg .hash-label { fill: var(--hash); font-family: "SF Mono", Menlo, monospace; font-weight: 600; }
+#reticleSvg .hit { fill: transparent; cursor: crosshair; }
+#reticleSvg .hit:hover ~ .hash-marker { opacity: 1; }
+
+/* Hover popup */
+.popup {
+  position: fixed;
+  background: rgba(20, 24, 31, 0.97);
+  border: 1px solid var(--accent2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--fg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  max-width: 280px;
+}
+.popup.show { opacity: 1; }
+.popup .title { color: var(--accent2); font-weight: 700; margin-bottom: 6px; }
+.popup .row { display: grid; grid-template-columns: 90px 1fr; gap: 8px; padding: 1px 0; }
+.popup .lbl { color: var(--fg-dim); }
+.popup .val { color: var(--fg); text-align: right; }
+
+/* Bottom info */
+.bottom-info {
+  width: min(620px, 100%);
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--fg-dim);
+  line-height: 1.6;
+}
+.bottom-info code {
+  background: var(--bg-input);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--accent);
+}
+.bottom-info .err { color: var(--bad); }
+.bottom-info .ok { color: var(--good); }
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-top: 4px;
+}
+.summary-grid .item { display: flex; justify-content: space-between; }
+.summary-grid .item .k { color: var(--fg-dim); }
+.summary-grid .item .v { color: var(--fg); font-family: "SF Mono", Menlo, monospace; }
+
+.status-line {
+  width: min(620px, 100%);
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--fg-dim);
+  display: flex;
+  justify-content: space-between;
+}
+.status-line .left { font-family: "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <span class="title">🎯 Эмулятор прицельной сетки</span>
+    <span class="sub">  · Lesnik 660L PRO · D1–D5 hash marks с полной баллистикой</span>
+  </div>
+  <div style="display:flex; gap:14px;">
+    <a href="index.html">← Все калькуляторы</a>
+    <a href="calculator-corrected.html">Calculator (corrected) →</a>
+  </div>
+</header>
+
+<main>
+  <aside class="inputs">
+    <h3>Импорт</h3>
+    <div class="preset-bar">
+      <button class="preset-btn" id="importJsonBtn" title="Импорт snapshot JSON {fields, flags}">📥 JSON snapshot</button>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none">
+    </div>
+    <div class="preset-bar" id="userPresetsBar" style="margin-top:6px;"></div>
+
+    <h3>Дистанции hash marks</h3>
+    <div class="dist-grid">
+      <div class="col"><label>D1</label><input type="number" id="d1" value="100" min="10" max="3000" step="10"></div>
+      <div class="col"><label>D2</label><input type="number" id="d2" value="300" min="10" max="3000" step="10"></div>
+      <div class="col"><label>D3</label><input type="number" id="d3" value="500" min="10" max="3000" step="10"></div>
+      <div class="col"><label>D4</label><input type="number" id="d4" value="700" min="10" max="3000" step="10"></div>
+      <div class="col"><label>D5</label><input type="number" id="d5" value="1000" min="10" max="3000" step="10"></div>
+    </div>
+
+    <h3>Поле зрения (FOV)</h3>
+    <div class="slider-row">
+      <input type="range" id="fovDeg" min="3" max="25" step="0.1" value="7.3">
+      <span class="val" id="fovDegVal">7.3°</span>
+    </div>
+    <div class="preset-bar">
+      <button class="preset-btn" data-fov="21.7" title="Lesnik 20 mm wide lens (640×512 sensor @ ~12 µm)">Wide 20 mm · 21.7°</button>
+      <button class="preset-btn" data-fov="7.3"  title="Lesnik 60 mm tele lens (640×512 sensor @ ~12 µm)">Tele 60 mm · 7.3°</button>
+    </div>
+
+    <h3>Пристрелка</h3>
+    <div class="field"><label>Пристрелка <span class="unit">м</span></label><input type="number" id="zeroDist" value="100" min="25" max="500" step="5"></div>
+
+    <h3>Пуля</h3>
+    <div class="field"><label>Профиль drag</label>
+      <select id="dragModel">
+        <option value="G1">G1</option>
+        <option value="G2">G2</option>
+        <option value="G5">G5</option>
+        <option value="G6">G6</option>
+        <option value="G7" selected>G7</option>
+        <option value="G8">G8</option>
+      </select>
+    </div>
+    <div class="field"><label>BC <span class="unit">lb/in²</span></label><input type="number" id="BC" value="0.218" min="0.05" max="2.0" step="0.001"></div>
+    <div class="field"><label>Начальная скорость <span class="unit">м/с</span></label><input type="number" id="muzzleV" value="817" min="200" max="1500" step="1"></div>
+    <div class="field"><label>Вес пули <span class="unit">grain</span></label><input type="number" id="mass_gr" value="168" min="30" max="800" step="1"></div>
+    <div class="field"><label>Диаметр <span class="unit">мм</span></label><input type="number" id="diameter_mm" value="7.82" min="4" max="15" step="0.01"></div>
+    <div class="field"><label>Длина пули <span class="unit">мм</span></label><input type="number" id="length_mm" value="31.2" min="10" max="60" step="0.1"></div>
+
+    <h3>Прицел</h3>
+    <div class="field"><label>Высота прицела <span class="unit">мм</span></label><input type="number" id="sightHeight" value="38" min="10" max="100" step="1"></div>
+
+    <h3>Атмосфера</h3>
+    <div class="field"><label>Температура <span class="unit">°C</span></label><input type="number" id="T_C" value="15" min="-40" max="50" step="1"></div>
+    <div class="field"><label>Давление <span class="unit">гПа</span></label><input type="number" id="P_hPa" value="1013" min="700" max="1100" step="1"></div>
+    <div class="field"><label>Влажность <span class="unit">%</span></label><input type="number" id="RH" value="50" min="0" max="100" step="5"></div>
+
+    <h3>Ветер</h3>
+    <div class="field"><label>Скорость <span class="unit">м/с</span></label><input type="number" id="windV" value="0" min="0" max="30" step="0.5"></div>
+    <div class="field"><label>Направление <span class="unit">час</span></label><input type="number" id="windClock" value="3" min="1" max="12" step="0.5"></div>
+
+    <h3>Земля</h3>
+    <div class="field"><label>Широта <span class="unit">°</span></label><input type="number" id="latitude" value="55" min="-90" max="90" step="1"></div>
+    <div class="field"><label>Азимут стрельбы <span class="unit">°</span></label><input type="number" id="azimuth" value="90" min="0" max="360" step="5"></div>
+
+    <h3>Ствол / нарезы</h3>
+    <div class="field"><label>Шаг нарезов <span class="unit">in</span></label><input type="number" id="twist" value="10" min="6" max="20" step="0.5"></div>
+    <div class="field"><label>Направление</label>
+      <select id="riflingDir">
+        <option value="0">правая (→)</option>
+        <option value="1">левая (←)</option>
+      </select>
+    </div>
+
+    <h3>Коррекции</h3>
+    <label class="toggle"><input type="checkbox" id="useCoriolis" checked> Кориолис</label>
+    <label class="toggle"><input type="checkbox" id="useSpinDrift" checked> Деривация (Litz)</label>
+    <label class="toggle"><input type="checkbox" id="useDynamicBC"> Динамический BC</label>
+
+    <p style="font-size: 11px; color: var(--fg-dim); margin: 14px 6px 4px;">
+      Расчёт — серверный (CF Worker, режим <code>corrected</code>, без багов прошивки).
+      Sensor 640×512 @ ~12 µm; фокусы 20 mm/60 mm из <code>GuiConfig.json</code>
+      (<code>s32Lens_FovA/B</code>).
+    </p>
+  </aside>
+
+  <section class="canvas-area">
+    <h2>Прицельная сетка <span style="color:var(--fg-dim); font-weight:400;">— FOV <span id="hdrFov">7.3°</span></span></h2>
+    <div class="svg-wrap">
+      <svg id="reticleSvg" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="bottom-info" id="summaryBox">
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="status-line">
+      <span class="left" id="apiStatus">API: —</span>
+      <span id="computeStatus">—</span>
+    </div>
+  </section>
+</main>
+
+<div class="popup" id="popup"></div>
+
+<script>
+// =============================================================================
+// API config — auto-detect localhost vs production
+// =============================================================================
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8787'
+  : 'https://rika-ballistic-calc.shahanov.workers.dev';
+
+document.getElementById('apiStatus').textContent = 'API: ' + API_BASE;
+
+// =============================================================================
+// User profiles (shared key with calculator-corrected.html)
+// =============================================================================
+const USER_PROFILES_KEY = 'rcv-user-profiles-v1';
+
+function loadUserProfiles() {
+  try { return JSON.parse(localStorage.getItem(USER_PROFILES_KEY) || '{}'); }
+  catch (_) { return {}; }
+}
+
+function applyProfile(profile) {
+  for (const [k, v] of Object.entries(profile.fields || {})) {
+    const el = document.getElementById(k);
+    if (el && v !== undefined && v !== null) el.value = v;
+  }
+  for (const [k, v] of Object.entries(profile.flags || {})) {
+    const el = document.getElementById(k);
+    if (el && el.type === 'checkbox') el.checked = !!v;
+  }
+  scheduleCompute(0);
+}
+
+function renderUserProfilesBar() {
+  const bar = document.getElementById('userPresetsBar');
+  bar.innerHTML = '';
+  const profiles = loadUserProfiles();
+  const names = Object.keys(profiles);
+  if (names.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  for (const name of names) {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = '👤 ' + name;
+    btn.title = 'Загрузить профиль из calculator-corrected (общий localStorage)';
+    btn.addEventListener('click', () => applyProfile(profiles[name]));
+    bar.appendChild(btn);
+  }
+}
+
+// JSON snapshot import
+document.getElementById('importJsonBtn').addEventListener('click', () => {
+  document.getElementById('jsonFileInput').click();
+});
+document.getElementById('jsonFileInput').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      applyProfile(parsed);
+    } catch (err) {
+      alert('Ошибка JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+});
+
+// FOV slider
+const fovInput = document.getElementById('fovDeg');
+const fovInputVal = document.getElementById('fovDegVal');
+const hdrFov = document.getElementById('hdrFov');
+function updateFovDisplay() {
+  const v = parseFloat(fovInput.value).toFixed(1);
+  fovInputVal.textContent = v + '°';
+  hdrFov.textContent = v + '°';
+}
+fovInput.addEventListener('input', () => {
+  updateFovDisplay();
+  drawReticle(lastMarks, parseFloat(fovInput.value));
+});
+document.querySelectorAll('.preset-btn[data-fov]').forEach(b => {
+  b.addEventListener('click', () => {
+    fovInput.value = b.dataset.fov;
+    updateFovDisplay();
+    drawReticle(lastMarks, parseFloat(fovInput.value));
+  });
+});
+updateFovDisplay();
+
+// =============================================================================
+// Build payload from form
+// =============================================================================
+function buildPayload() {
+  const $  = id => document.getElementById(id).value;
+  const $n = id => parseFloat(document.getElementById(id).value);
+  const $c = id => document.getElementById(id).checked;
+
+  const massG = $n('mass_gr') / 15.4324;
+  const bullet = [massG, $n('BC'), $n('muzzleV'), $n('diameter_mm'), $n('length_mm')];
+  const rifling = {
+    twistCm: $n('twist') * 2.54,
+    dirRight: parseInt($('riflingDir')) === 0,
+    sightHeightCm: $n('sightHeight') / 10.0,
+  };
+  const atmoZero = [0, $n('P_hPa') * 100, $n('T_C'), $n('RH') / 100];
+  const windV = $n('windV');
+  const windClockDeg = $n('windClock') * 30;
+  const windSegments = windV > 0 ? [[0, windV, windClockDeg]] : null;
+  const distances = ['d1','d2','d3','d4','d5']
+    .map(id => parseFloat(document.getElementById(id).value))
+    .filter(d => Number.isFinite(d) && d > 0);
+  return {
+    bullet, rifling, atmoZero, windSegments,
+    dragModel: $('dragModel'),
+    opts: {
+      useCoriolis: $c('useCoriolis'),
+      useDrift:    $c('useSpinDrift'),
+      useDynamicBC: $c('useDynamicBC'),
+      latitudeDeg: $n('latitude'),
+      shootingAzimuthDeg: $n('azimuth'),
+    },
+    zeroDist: $n('zeroDist'),
+    distances,
+  };
+}
+
+// =============================================================================
+// SVG reticle rendering
+// =============================================================================
+let lastMarks = null;
+const svg = document.getElementById('reticleSvg');
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const MIL_PER_DEG = 17.4533;
+
+function el(name, attrs = {}, parent = svg) {
+  const e = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function drawReticle(marks, fovDeg) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const halfMil = (fovDeg * MIL_PER_DEG) / 2.0;
+  const fullMil = halfMil * 2.0;
+  svg.setAttribute('viewBox', `${-halfMil} ${-halfMil} ${fullMil} ${fullMil}`);
+
+  // Pick tick interval so we end up with ~10 ticks per half-axis using "nice" numbers.
+  const niceStep = (raw) => {
+    const exp = Math.floor(Math.log10(raw));
+    const base = raw / Math.pow(10, exp);
+    const nice = base <= 1 ? 1 : base <= 2 ? 2 : base <= 5 ? 5 : 10;
+    return nice * Math.pow(10, exp);
+  };
+  const tickStep = niceStep(halfMil / 10);
+
+  // Font sizing: scale with viewBox so labels stay readable
+  const fontMain = halfMil * 0.04;
+  const fontHash = halfMil * 0.05;
+  const tickLen = halfMil * 0.022;
+
+  // Outer FOV circle (decorative — represents scope edge)
+  el('circle', { cx: 0, cy: 0, r: halfMil * 0.99,
+                 fill: 'none', stroke: '#3a5b48',
+                 'stroke-width': '0.8', 'vector-effect': 'non-scaling-stroke',
+                 'stroke-dasharray': '4 4' });
+
+  // Faint integer-mil grid lines (only if not too dense)
+  if (halfMil <= 30) {
+    for (let i = -Math.floor(halfMil); i <= Math.floor(halfMil); i++) {
+      if (i === 0) continue;
+      el('line', { class: 'grid', x1: i, y1: -halfMil, x2: i, y2: halfMil, opacity: 0.4 });
+      el('line', { class: 'grid', x1: -halfMil, y1: i, x2: halfMil, y2: i, opacity: 0.4 });
+    }
+  }
+
+  // Main axes (crosshair)
+  el('line', { class: 'axis', x1: -halfMil, y1: 0, x2: halfMil, y2: 0 });
+  el('line', { class: 'axis', x1: 0, y1: -halfMil, x2: 0, y2: halfMil });
+
+  // Center dot
+  el('circle', { class: 'center', cx: 0, cy: 0, r: halfMil * 0.012 });
+
+  // Tick marks + labels on axes
+  // X-axis: positive right = wind drift right. Labels: absolute value.
+  // Y-axis: SVG-y positive = down on screen = drop (positive дроп = ниже центра).
+  // Labels: absolute value; position carries meaning.
+  for (let i = -Math.floor(halfMil / tickStep) * tickStep;
+           i <= Math.floor(halfMil / tickStep) * tickStep;
+           i += tickStep) {
+    if (i === 0) continue;
+    el('line', { class: 'tick', x1: i, y1: -tickLen, x2: i, y2: tickLen });
+    el('line', { class: 'tick', x1: -tickLen, y1: i, x2: tickLen, y2: i });
+    const lblX = el('text', { class: 'label', x: i, y: tickLen * 2.2 + fontMain,
+                              'text-anchor': 'middle',
+                              'font-size': fontMain });
+    lblX.textContent = Math.abs(i);
+    const lblY = el('text', { class: 'label', x: tickLen * 1.5, y: i + fontMain * 0.35,
+                              'text-anchor': 'start',
+                              'font-size': fontMain });
+    lblY.textContent = Math.abs(i);
+  }
+  // Up / Down hints on Y-axis
+  const hint = el('text', { class: 'label', x: -tickLen * 0.5, y: -halfMil * 0.93,
+                            'text-anchor': 'end',
+                            'font-size': fontMain * 0.9,
+                            opacity: 0.6 });
+  hint.textContent = '↑ выше LoS';
+  const hint2 = el('text', { class: 'label', x: -tickLen * 0.5, y: halfMil * 0.96,
+                             'text-anchor': 'end',
+                             'font-size': fontMain * 0.9,
+                             opacity: 0.6 });
+  hint2.textContent = '↓ drop';
+
+  // Hash marks (D1..Dn). Smart label stacking: when marks cluster (small drop
+  // diffs vs viewport), labels stagger vertically with leader lines.
+  if (marks && marks.length) {
+    const hashWidth = halfMil * 0.04;
+    // Pre-compute drop positions (SVG-y) sorted by visual y for stacking.
+    const items = marks.map((m, idx) => ({
+      m, idx,
+      x: m.total_lateral_mil,
+      y: -m.drop_mil,
+      label: `D${idx + 1} ${Math.round(m.dist)}м`,
+    }));
+
+    // Compute label Y positions: minimum gap = fontHash * 1.4 (one line height).
+    // Sort by raw y ascending, then push down if collision.
+    const minGap = fontHash * 1.4;
+    const sorted = [...items].sort((a, b) => a.y - b.y);
+    let lastLabelY = -Infinity;
+    sorted.forEach((it) => {
+      let ly = it.y;
+      if (ly < lastLabelY + minGap) ly = lastLabelY + minGap;
+      it.labelY = ly;
+      lastLabelY = ly;
+    });
+
+    items.forEach((it) => {
+      const { m, idx, x, y, labelY, label } = it;
+      // Skip rendering if WAY off-screen (>2× viewport)
+      if (Math.abs(x) > halfMil * 1.8 || Math.abs(y) > halfMil * 1.8) return;
+
+      // Mark itself: horizontal tick + center dot
+      el('line', { class: 'hash-line', x1: x - hashWidth, y1: y, x2: x + hashWidth, y2: y });
+      el('circle', { class: 'hash-dot', cx: x, cy: y, r: halfMil * 0.013 });
+
+      // Leader line if label is offset from mark
+      const labelX = x + hashWidth * 1.6;
+      if (Math.abs(labelY - y) > fontHash * 0.4) {
+        el('line', {
+          x1: x + hashWidth, y1: y,
+          x2: labelX - hashWidth * 0.4, y2: labelY - fontHash * 0.3,
+          stroke: '#ffb86c', 'stroke-width': '0.8',
+          'vector-effect': 'non-scaling-stroke',
+          opacity: '0.55',
+        });
+      }
+
+      const lbl = el('text', {
+        class: 'hash-label',
+        x: labelX, y: labelY + fontHash * 0.35,
+        'text-anchor': 'start',
+        'font-size': fontHash,
+      });
+      lbl.textContent = label;
+
+      // Hover hit area (invisible bigger circle for easier capture)
+      const hit = el('circle', {
+        cx: x, cy: y, r: halfMil * 0.05,
+        fill: 'transparent',
+        'pointer-events': 'all',
+        'data-idx': idx,
+      });
+      hit.style.cursor = 'crosshair';
+      hit.addEventListener('mouseenter', (e) => showPopup(m, idx + 1, e));
+      hit.addEventListener('mousemove', (e) => positionPopup(e));
+      hit.addEventListener('mouseleave', hidePopup);
+    });
+  }
+
+  // Update summary box
+  renderSummary(marks);
+}
+
+// =============================================================================
+// Popup
+// =============================================================================
+const popup = document.getElementById('popup');
+
+function fmt(num, dig = 2) {
+  if (!Number.isFinite(num)) return '—';
+  return num.toFixed(dig);
+}
+
+function showPopup(m, dn, ev) {
+  const sign = (x) => x > 0 ? '+' : '';
+  popup.innerHTML = `
+    <div class="title">D${dn} · ${Math.round(m.dist)} м</div>
+    <div class="row"><span class="lbl">Drop:</span>
+      <span class="val">${fmt(m.drop_m * 100, 1)} см / ${fmt(m.drop_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">Ветер:</span>
+      <span class="val">${sign(m.wind_m)}${fmt(m.wind_m * 100, 1)} см / ${fmt(m.wind_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">Coriolis-H:</span>
+      <span class="val">${sign(m.coriolis_h_m)}${fmt(m.coriolis_h_m * 100, 1)} см / ${fmt(m.coriolis_h_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">Coriolis-V:</span>
+      <span class="val">${sign(m.coriolis_v_m)}${fmt(m.coriolis_v_m * 100, 1)} см / ${fmt(m.coriolis_v_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">Деривация:</span>
+      <span class="val">${sign(m.drift_m)}${fmt(m.drift_m * 100, 1)} см / ${fmt(m.drift_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">Σ боковое:</span>
+      <span class="val">${sign(m.total_lateral_m)}${fmt(m.total_lateral_m * 100, 1)} см / ${fmt(m.total_lateral_mil, 2)} mil</span></div>
+    <div class="row"><span class="lbl">TOF:</span>
+      <span class="val">${fmt(m.tof, 2)} с</span></div>
+    <div class="row"><span class="lbl">V<sub>цели</sub>:</span>
+      <span class="val">${fmt(m.v, 0)} м/с · M${fmt(m.v_mach, 2)}</span></div>
+    <div class="row"><span class="lbl">Энергия:</span>
+      <span class="val">${fmt(m.energy, 0)} Дж</span></div>
+  `;
+  popup.classList.add('show');
+  positionPopup(ev);
+}
+
+function positionPopup(ev) {
+  const pad = 14;
+  let x = ev.clientX + pad;
+  let y = ev.clientY + pad;
+  const rect = popup.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth) x = ev.clientX - rect.width - pad;
+  if (y + rect.height > window.innerHeight) y = ev.clientY - rect.height - pad;
+  popup.style.left = x + 'px';
+  popup.style.top  = y + 'px';
+}
+
+function hidePopup() {
+  popup.classList.remove('show');
+}
+
+// =============================================================================
+// Summary box (active bullet + atmo + wind)
+// =============================================================================
+function renderSummary(marks) {
+  const $  = id => document.getElementById(id).value;
+  const $n = id => parseFloat(document.getElementById(id).value);
+  const grid = document.getElementById('summaryGrid');
+  const items = [
+    ['Пуля',    `${$('dragModel')} · BC ${$n('BC').toFixed(3)} · ${$n('mass_gr')} gr · ${$n('muzzleV')} м/с`],
+    ['Атмо',    `${$n('T_C')}°C · ${$n('P_hPa')} гПа · ${$n('RH')}%`],
+    ['Ветер',   $n('windV') > 0 ? `${$n('windV')} м/с с ${$n('windClock')}ч` : 'нет'],
+    ['Coriolis', document.getElementById('useCoriolis').checked
+                  ? `lat ${$n('latitude')}° · az ${$n('azimuth')}°` : 'отключён'],
+    ['Деривация', document.getElementById('useSpinDrift').checked
+                  ? `${$n('twist')}″ ${$('riflingDir')==='0'?'→':'←'}` : 'отключена'],
+    ['Пристрелка', `${$n('zeroDist')} м · высота прицела ${$n('sightHeight')} мм`],
+  ];
+  grid.innerHTML = items.map(([k, v]) =>
+    `<div class="item"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('');
+}
+
+// =============================================================================
+// Debounced compute → /reticle
+// =============================================================================
+const status = document.getElementById('computeStatus');
+let computeTimer = null;
+let inflight = null;
+
+function scheduleCompute(delay = 300) {
+  if (computeTimer) clearTimeout(computeTimer);
+  computeTimer = setTimeout(compute, delay);
+}
+
+async function compute() {
+  const payload = buildPayload();
+  if (payload.distances.length === 0) {
+    status.textContent = 'нет дистанций';
+    drawReticle([], parseFloat(fovInput.value));
+    return;
+  }
+  status.textContent = 'считаем…';
+  if (inflight) inflight.abort();
+  const ctl = new AbortController();
+  inflight = ctl;
+  const t0 = performance.now();
+  try {
+    const resp = await fetch(API_BASE + '/reticle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctl.signal,
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: 'HTTP ' + resp.status }));
+      throw new Error(err.error || ('HTTP ' + resp.status));
+    }
+    const data = await resp.json();
+    lastMarks = data.marks;
+    drawReticle(data.marks, parseFloat(fovInput.value));
+    const dt = (performance.now() - t0).toFixed(0);
+    status.textContent = `${data.marks.length} меток · ${dt} мс`;
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    status.textContent = 'ошибка: ' + e.message;
+    console.error(e);
+  } finally {
+    if (inflight === ctl) inflight = null;
+  }
+}
+
+// Bind change handlers
+document.querySelectorAll('.inputs input, .inputs select').forEach(el => {
+  el.addEventListener('input', () => scheduleCompute());
+  el.addEventListener('change', () => scheduleCompute());
+});
+
+// Initial render + first compute
+renderUserProfilesBar();
+drawReticle([], parseFloat(fovInput.value));
+compute();
+</script>
+</body>
+</html>
