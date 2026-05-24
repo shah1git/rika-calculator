@@ -271,7 +271,7 @@ tr.zero td { background: rgba(126,226,168,.08); }
   </div>
   <div style="display:flex; flex-direction:column; gap:6px;">
     <a href="calculator.html" style="background:#4a2d2d; padding:6px 12px; border-radius:4px; text-decoration:none; color:#e4a3a3;">⚙ Firmware-mirror (как в приборе) →</a>
-    <a href="index.html">← На главную</a>
+    <a href="report.html">← Отчёт по прошивке</a>
   </div>
 </header>
 
@@ -283,6 +283,35 @@ tr.zero td { background: rgba(126,226,168,.08); }
       <button class="preset-btn" data-preset="65cm_140eldm">6.5CM 140gr ELD-M</button>
       <button class="preset-btn" data-preset="223_77smk">.223 77gr SMK</button>
     </div>
+    <details class="profile-editor" style="margin-top:8px;">
+      <summary style="cursor:pointer; padding:6px 10px; background:var(--bg-card); border:1px solid var(--rule); border-radius:4px; font-size:12px; color:var(--fg-dim); user-select:none;">✏️ Редактировать профили пуль</summary>
+      <style>
+        .profile-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; }
+        .profile-card-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+        .profile-card-head .profile-name { flex: 1; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-size: 12px; font-weight: 600; }
+        .profile-card-actions { display: flex; gap: 2px; }
+        .profile-card-actions button { padding: 2px 6px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg-dim); cursor: pointer; font-size: 12px; line-height: 1; }
+        .profile-card-actions button:hover { color: var(--accent); }
+        .profile-card-actions .del-btn:hover { color: var(--bad); border-color: var(--bad); }
+        .profile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 11px; }
+        .profile-fields label { display: flex; justify-content: space-between; align-items: center; gap: 4px; color: var(--fg-dim); }
+        .profile-fields input, .profile-fields select { width: 75px; padding: 2px 4px; background: var(--bg-input); border: 1px solid var(--rule); border-radius: 3px; color: var(--fg); font-family: "SF Mono", Menlo, monospace; font-size: 11px; text-align: right; }
+        .profile-fields select { text-align: left; }
+        .profile-editor .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); }
+      </style>
+      <div style="padding:10px 0 4px 0;">
+        <div id="profile-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div class="editor-toolbar">
+          <button id="add-profile-btn" class="preset-btn" type="button">+ Добавить</button>
+          <button id="reset-profiles-btn" class="preset-btn" type="button">↺ Сбросить</button>
+          <button id="export-profiles-btn" class="preset-btn" type="button">⬇ Экспорт</button>
+          <button id="import-profiles-btn" class="preset-btn" type="button">⬆ Импорт</button>
+          <input type="file" id="import-profiles-file" style="display:none" accept=".json,application/json">
+        </div>
+        <p style="margin:8px 0 0 0; font-size:11px; color:var(--fg-dim); line-height:1.4;">Изменения сохраняются в браузере (localStorage). Для переноса между устройствами — Экспорт/Импорт JSON.</p>
+      </div>
+    </details>
+
 
     <h3>Цель</h3>
     <div class="field"><label>Дистанция <span class="unit">м</span></label><input type="number" id="targetDist" value="500" min="10" max="3000" step="10"></div>
@@ -632,7 +661,7 @@ const MODE = "corrected";
 // =============================================================================
 // Frontend caller for rika-calc-api Cloudflare Worker.
 // Алгоритм баллистики живёт на сервере (приватный код), здесь — только UI
-// и формирование запросов.
+// и формирование запросов. Плюс editor пользовательских профилей пуль.
 // =============================================================================
 const API_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:") ? "http://localhost:8787/calc" : "https://rika-ballistic-calc.shahanov.workers.dev/calc";
 
@@ -640,14 +669,34 @@ const $ = id => document.getElementById(id).value;
 const $n = id => parseFloat(document.getElementById(id).value);
 const $c = id => document.getElementById(id).checked;
 
-const PRESETS = {
-  "308_168smk":  { dragModel: "G7", BC: 0.218, muzzleV: 817, mass_gr: 168, diameter_mm: 7.82, length_mm: 31.2, twist: 11.25 },
-  "338_300smk":  { dragModel: "G7", BC: 0.420, muzzleV: 820, mass_gr: 300, diameter_mm: 8.59, length_mm: 41.9, twist: 9.35 },
-  "65cm_140eldm":{ dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140, diameter_mm: 6.71, length_mm: 35.6, twist: 8 },
-  "223_77smk":   { dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,  diameter_mm: 5.69, length_mm: 24.9, twist: 7 },
+// Default profiles — used at first launch and on "reset to defaults"
+const DEFAULT_PROFILES = {
+  "308_168smk":   { name: ".308 168gr SMK",   dragModel: "G7", BC: 0.218, muzzleV: 817, mass_gr: 168, diameter_mm: 7.82, length_mm: 31.2, twist: 11.25 },
+  "338_300smk":   { name: ".338 300gr SMK",   dragModel: "G7", BC: 0.420, muzzleV: 820, mass_gr: 300, diameter_mm: 8.59, length_mm: 41.9, twist: 9.35 },
+  "65cm_140eldm": { name: "6.5CM 140gr ELD-M",dragModel: "G7", BC: 0.315, muzzleV: 840, mass_gr: 140, diameter_mm: 6.71, length_mm: 35.6, twist: 8 },
+  "223_77smk":    { name: ".223 77gr SMK",    dragModel: "G7", BC: 0.190, muzzleV: 820, mass_gr: 77,  diameter_mm: 5.69, length_mm: 24.9, twist: 7 },
 };
 
+const LS_KEY = "rika-calculator-profiles";
 const LITZ_EXP = 1.83;
+
+function loadProfiles() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed === "object" && parsed !== null && Object.keys(parsed).length > 0) return parsed;
+    }
+  } catch (e) { console.warn("Не удалось прочитать профили из localStorage:", e); }
+  return JSON.parse(JSON.stringify(DEFAULT_PROFILES));
+}
+
+function saveProfiles() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(userProfiles)); }
+  catch (e) { console.warn("Не удалось сохранить профили:", e); }
+}
+
+let userProfiles = loadProfiles();
 
 let chart = null;
 let inFlight = false;
@@ -805,7 +854,6 @@ function updateTable(samples, params, cSound, massKg) {
   for (let d = step; d <= targetX; d += step) distances.push(d);
   if (distances[distances.length - 1] !== targetX) distances.push(targetX);
 
-  // Litz drift conversion factor differs by mode (BUG-001 illustration)
   const driftFactor = MODE === "mirror" ? (1.0 / 254.0) : 0.0254;
   const sign = params.dirRight ? 1 : -1;
 
@@ -838,20 +886,170 @@ function showLoading(on) {
   if (dispDist) dispDist.style.opacity = on ? "0.4" : "1";
 }
 
-// Preset buttons
-document.querySelectorAll(".preset-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const p = PRESETS[btn.dataset.preset];
-    if (!p) return;
-    for (const [k, v] of Object.entries(p)) {
-      const el = document.getElementById(k);
-      if (el) el.value = v;
-    }
-    compute();
+// =============================================================================
+// Профили: render UI + editor + localStorage persistence
+// =============================================================================
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function renderPresetBar() {
+  const bar = document.querySelector(".preset-bar");
+  if (!bar) return;
+  bar.innerHTML = Object.entries(userProfiles).map(([id, p]) =>
+    `<button class="preset-btn" data-preset="${escapeHtml(id)}">${escapeHtml(p.name || id)}</button>`
+  ).join("");
+}
+
+function applyPreset(id) {
+  const p = userProfiles[id];
+  if (!p) return;
+  const fields = ["dragModel", "BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm", "twist"];
+  for (const k of fields) {
+    if (p[k] === undefined) continue;
+    const el = document.getElementById(k);
+    if (el) el.value = p[k];
+  }
+  compute();
+}
+
+function renderProfileEditor() {
+  const list = document.getElementById("profile-list");
+  if (!list) return;
+  list.innerHTML = Object.entries(userProfiles).map(([id, p]) => `
+    <div class="profile-card" data-id="${escapeHtml(id)}">
+      <div class="profile-card-head">
+        <input type="text" class="profile-name" value="${escapeHtml(p.name || id)}" placeholder="Имя профиля" data-key="name">
+        <div class="profile-card-actions">
+          <button class="dup-btn" title="Дублировать">⎘</button>
+          <button class="del-btn" title="Удалить">✕</button>
+        </div>
+      </div>
+      <div class="profile-fields">
+        <label>Drag<select data-key="dragModel">
+          ${["G1","G2","G5","G6","G7","G8"].map(m => `<option value="${m}" ${p.dragModel === m ? "selected" : ""}>${m}</option>`).join("")}
+        </select></label>
+        <label>BC<input type="number" data-key="BC" value="${p.BC}" step="0.001" min="0.05" max="2"></label>
+        <label>MV, м/с<input type="number" data-key="muzzleV" value="${p.muzzleV}" step="1" min="100" max="1500"></label>
+        <label>Масса, gr<input type="number" data-key="mass_gr" value="${p.mass_gr}" step="1" min="20" max="900"></label>
+        <label>Диам., мм<input type="number" data-key="diameter_mm" value="${p.diameter_mm}" step="0.01" min="4" max="15"></label>
+        <label>Длина, мм<input type="number" data-key="length_mm" value="${p.length_mm}" step="0.1" min="10" max="60"></label>
+        <label>Твист, дюйм<input type="number" data-key="twist" value="${p.twist}" step="0.05" min="5" max="20"></label>
+      </div>
+    </div>
+  `).join("");
+  bindEditorEvents();
+}
+
+function bindEditorEvents() {
+  document.querySelectorAll(".profile-card").forEach(card => {
+    const id = card.dataset.id;
+    card.querySelectorAll("[data-key]").forEach(input => {
+      input.addEventListener("input", e => {
+        const key = e.target.dataset.key;
+        const raw = e.target.value;
+        userProfiles[id][key] = (e.target.type === "number") ? (parseFloat(raw) || 0) : raw;
+        saveProfiles();
+        if (key === "name") renderPresetBar();
+      });
+    });
+    card.querySelector(".dup-btn").addEventListener("click", () => {
+      const newId = id + "_copy_" + Date.now();
+      userProfiles[newId] = { ...userProfiles[id], name: (userProfiles[id].name || id) + " (копия)" };
+      saveProfiles();
+      renderPresetBar();
+      renderProfileEditor();
+    });
+    card.querySelector(".del-btn").addEventListener("click", () => {
+      if (Object.keys(userProfiles).length <= 1) { alert("Нельзя удалить последний профиль."); return; }
+      if (!confirm(`Удалить «${userProfiles[id].name || id}»?`)) return;
+      delete userProfiles[id];
+      saveProfiles();
+      renderPresetBar();
+      renderProfileEditor();
+    });
   });
+}
+
+function addProfile() {
+  const newId = "custom_" + Date.now();
+  userProfiles[newId] = {
+    name: "Новый профиль", dragModel: "G7",
+    BC: 0.250, muzzleV: 800, mass_gr: 150,
+    diameter_mm: 7.62, length_mm: 30.0, twist: 10.0,
+  };
+  saveProfiles();
+  renderPresetBar();
+  renderProfileEditor();
+}
+
+function resetProfiles() {
+  if (!confirm("Сбросить все профили к дефолтным? Кастомные будут потеряны.")) return;
+  userProfiles = JSON.parse(JSON.stringify(DEFAULT_PROFILES));
+  saveProfiles();
+  renderPresetBar();
+  renderProfileEditor();
+}
+
+function exportProfiles() {
+  const json = JSON.stringify(userProfiles, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rika-calculator-profiles.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importProfiles(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (typeof data !== "object" || data === null || Array.isArray(data)) throw new Error("Файл должен содержать объект профилей");
+      if (Object.keys(data).length === 0) throw new Error("Файл пустой");
+      for (const [id, p] of Object.entries(data)) {
+        if (!p || typeof p !== "object") throw new Error(`Профиль ${id} не объект`);
+        for (const k of ["BC", "muzzleV", "mass_gr", "diameter_mm", "length_mm", "twist"]) {
+          if (typeof p[k] !== "number" || !isFinite(p[k])) throw new Error(`${id}.${k}: ожидалось число, получено ${typeof p[k]}`);
+        }
+      }
+      userProfiles = data;
+      saveProfiles();
+      renderPresetBar();
+      renderProfileEditor();
+      alert(`Импортировано ${Object.keys(data).length} профилей.`);
+    } catch (err) {
+      alert("Ошибка импорта: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Initial render of dynamic preset bar
+renderPresetBar();
+renderProfileEditor();
+
+// Delegated click handler for preset buttons (renderPresetBar replaces the children)
+document.querySelector(".preset-bar")?.addEventListener("click", e => {
+  const btn = e.target.closest(".preset-btn");
+  if (btn) applyPreset(btn.dataset.preset);
 });
 
-// Debounced recalc on input changes — чтобы не делать API запрос на каждую цифру
+// Editor toolbar
+document.getElementById("add-profile-btn")?.addEventListener("click", addProfile);
+document.getElementById("reset-profiles-btn")?.addEventListener("click", resetProfiles);
+document.getElementById("export-profiles-btn")?.addEventListener("click", exportProfiles);
+document.getElementById("import-profiles-btn")?.addEventListener("click", () => document.getElementById("import-profiles-file").click());
+document.getElementById("import-profiles-file")?.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) importProfiles(file);
+  e.target.value = "";
+});
+
+// Debounced recalc on input changes
 let debounceTimer = null;
 const DEBOUNCE_MS = 350;
 document.querySelectorAll(".inputs input, .inputs select").forEach(el => {
