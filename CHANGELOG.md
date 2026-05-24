@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:3229055
+
+_Published 2026-05-24 14:50 UTC from `shah1git/rika-firmware@3229055`_
+
+- `3229055` calc-corrected: BUG-009 описание sync'нуто с реальным состоянием кода [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:e95dc1c
 
 _Published 2026-05-24 14:48 UTC from `shah1git/rika-firmware@e95dc1c`_
