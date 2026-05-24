@@ -446,7 +446,7 @@ tr.zero td { background: rgba(126,226,168,.08); }
       </details>
 
       <details style="margin-bottom: 10px; padding: 12px; background: rgba(80,60,40,0.15); border-left: 3px solid #aa8844; border-radius: 4px;">
-        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">❌ BUG-009 — Сначала думали баг, оказалось не баг (отозвано) <span style="background:#3a5fa8; color:#e0eaff; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">🆕 Обновлено 2026-05-24: refactor для читаемости</span></summary>
+        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">🔁 BUG-009 — Запутывающая формула drag (formula refactor) <span style="background:#2d6a2d; color:#cffccf; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">✅ ИСПРАВЛЕНО</span></summary>
         <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
           <p><b>Что подозревали.</b> Мы заметили, что в формуле сопротивления воздуха в прошивке используется множитель 3,281 (это коэффициент перевода метров в футы), хотя в стандартных физических формулах баллистики обычно фигурирует плотность воздуха 1,225 кг/м³. На первый взгляд это казалось серьёзной ошибкой — будто бы прошивка завышает сопротивление воздуха примерно в 2 раза.</p>
           <p><b>Почему отозвали.</b> Повторная проверка показала: эти формы математически эквивалентны. Если перемножить константы прошивки (0,000208551 × 3,2808399), получается 0,000684. Если перемножить классическое значение из учебника McCoy (0,000559 × 1,225), получается 0,000685 — отличие меньше одной десятой процента. То есть OEM-программист просто упаковал коэффициент перевода в плотность другим способом — необычная форма записи, но физически идентичная стандартной.</p>
@@ -2159,11 +2159,17 @@ compute();
   font-size:11px;}
 </style>
 <div id="rcv-banner">
-  <span class="v">v2026-05-24 · r:b9021b9</span>
+  <span class="v">v2026-05-24 · r:ec0b5fe</span>
   <span class="sep">·</span> <button onclick="var c=document.getElementById('rcv-changelog');c.style.display=c.style.display==='block'?'none':'block';">changelog</button>
   <span class="sep">·</span> <a href="https://github.com/shah1git/rika-firmware" target="_blank" rel="noopener">source</a>
 </div>
 <div id="rcv-changelog"><h1>Changelog</h1>
+
+<h2>v2026-05-24 · r:ec0b5fe</h2>
+
+_Published 2026-05-24 15:00 UTC from <code>shah1git/rika-firmware@ec0b5fe</code>_
+
+- <code>ec0b5fe</code> calc-corrected: BUG-009 ✅ ИСПРАВЛЕНО (зелёный badge как у других) [sync] _(shah1git, 0 seconds ago)_
 
 <h2>v2026-05-24 · r:b9021b9</h2>
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:ec0b5fe
+
+_Published 2026-05-24 15:00 UTC from `shah1git/rika-firmware@ec0b5fe`_
+
+- `ec0b5fe` calc-corrected: BUG-009 ✅ ИСПРАВЛЕНО (зелёный badge как у других) [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:b9021b9
 
 _Published 2026-05-24 14:58 UTC from `shah1git/rika-firmware@b9021b9`_
