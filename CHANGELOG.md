@@ -1,5 +1,11 @@
 # Changelog
 
+## v2026-05-24 · r:4b8a533
+
+_Published 2026-05-24 14:23 UTC from `shah1git/rika-firmware@4b8a533`_
+
+- `4b8a533` calc-corrected: добавлен LESNIK-BUG-010 в UI bugs list [sync] _(shah1git, 0 seconds ago)_
+
 ## v2026-05-24 · r:605306f
 
 _Published 2026-05-24 14:08 UTC from `shah1git/rika-firmware@605306f`_

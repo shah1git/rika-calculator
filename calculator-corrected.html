@@ -421,6 +421,24 @@ tr.zero td { background: rgba(126,226,168,.08); }
         </div>
       </details>
 
+      <details style="margin-bottom: 10px;">
+        <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">🔴 BUG-010 — BC ниже 0.001 тихо подменяется на 0.001 → физически невозможная баллистика <span style="background:#2d6a2d; color:#cffccf; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; margin-left:8px;">✅ ИСПРАВЛЕНО</span></summary>
+        <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
+          <p><b>В чём суть.</b> Баллистический коэффициент (BC) — параметр, описывающий сопротивление пули воздуху. Для реальных пуль BC лежит в диапазоне примерно 0,1–0,8 (G7 модель). Значения <b>намного меньше 0,1</b> физически невозможны — это означало бы пулю с экстремальным сопротивлением, не существующую в природе.</p>
+          <p><b>В чём ошибка прошивки.</b> В функции санитайзера баллистических параметров (<code>zs_GuiSpecParamTrajectory_ParamCheck</code> @ 0x15c838 в <code>libGuiLesnik2_pro.so</code>) стоит проверка: если BC < 0,001, прибор <b>тихо подменяет</b> его на 0,001. Аналогично — 0,001 является <b>дефолтным значением</b> при заводском сбросе или повреждении файла конфигурации. Программист защищался от деления на ноль, но 0,001 выбрано как «не ноль» без понимания физического смысла.</p>
+          <p><b>Что это значит для стрелка.</b> Формула сопротивления: <code>a_drag ∝ 1/BC</code>. При BC=0,001 коэффициент сопротивления в <b>500–1000× выше нормы</b>. Пуля резко тормозится, drop становится астрономическим. Численный пример (G7 модель, v₀=800 м/с):</p>
+          <table style="margin: 8px 0; font-size: 12px; border-collapse: collapse;">
+            <tr><th style="text-align:left; padding: 2px 12px 2px 0;">BC</th><th style="text-align:left; padding: 2px 12px;">Drop @ 100 м</th><th style="text-align:left; padding: 2px 12px;">Drop @ 200 м</th></tr>
+            <tr><td style="padding: 2px 12px 2px 0;">0,5 (норма)</td><td style="padding: 2px 12px;">13 см</td><td style="padding: 2px 12px;">37 см</td></tr>
+            <tr><td style="padding: 2px 12px 2px 0;">0,01</td><td style="padding: 2px 12px;">36 см</td><td style="padding: 2px 12px;">300 см</td></tr>
+            <tr><td style="padding: 2px 12px 2px 0;"><b>0,001</b></td><td style="padding: 2px 12px;"><b>2,6 м @ 50 м!</b></td><td style="padding: 2px 12px;">— (пуля не долетает)</td></tr>
+          </table>
+          <p><b>Когда баг проявляется.</b> Свежий прибор / factory reset / повреждённый JSON конфиг → дефолтный BC=0,001. Либо пользователь вручную ввёл значение < 0,001 → тихо подменилось. Параллельный симптом в Ovod-прошивке (OEM той же фирмы SunCreative): аналогичный кламп ломает overlay-окошко PiP — координаты прицельной точки уходят за пределы экрана.</p>
+          <p><b>Как мы исправили.</b> В калькуляторе <b>нет такого clamp'а</b> — введённое пользователем значение BC используется как есть, без молчаливой подмены. Если ввести физически нереальный BC — пользователь увидит абсурдные числа в результате и поймёт что ввод ошибочный. Это лучше чем тихая работа с «безопасным» дефолтом, который сам по себе ломает расчёт.</p>
+          <p><b>Как нашли.</b> Через обновлённый skill <code>disassemble-firmware</code> v1.3.0: auto-correlation двух Ghidra-скриптов — <code>GhidraScanConstants</code> нашёл константу 0,001 в literal pool, <code>GhidraFindSanitizers</code> нашёл use-site в санитайзере. Pattern совпал с уже известным OVOD-BUG-001 → подтверждение OEM-recurring баг.</p>
+        </div>
+      </details>
+
       <details style="margin-bottom: 10px; padding: 12px; background: rgba(80,60,40,0.15); border-left: 3px solid #aa8844; border-radius: 4px;">
         <summary style="cursor: pointer; font-weight: 600; font-size: 14px;">❌ BUG-009 — Сначала думали баг, оказалось не баг (отозвано)</summary>
         <div style="margin-top: 12px; font-size: 13.5px; line-height: 1.7;">
@@ -1904,11 +1922,17 @@ compute();
   font-size:11px;}
 </style>
 <div id="rcv-banner">
-  <span class="v">v2026-05-24 · r:605306f</span>
+  <span class="v">v2026-05-24 · r:4b8a533</span>
   <span class="sep">·</span> <button onclick="var c=document.getElementById('rcv-changelog');c.style.display=c.style.display==='block'?'none':'block';">changelog</button>
   <span class="sep">·</span> <a href="https://github.com/shah1git/rika-firmware" target="_blank" rel="noopener">source</a>
 </div>
 <div id="rcv-changelog"><h1>Changelog</h1>
+
+<h2>v2026-05-24 · r:4b8a533</h2>
+
+_Published 2026-05-24 14:23 UTC from <code>shah1git/rika-firmware@4b8a533</code>_
+
+- <code>4b8a533</code> calc-corrected: добавлен LESNIK-BUG-010 в UI bugs list [sync] _(shah1git, 0 seconds ago)_
 
 <h2>v2026-05-24 · r:605306f</h2>
 
